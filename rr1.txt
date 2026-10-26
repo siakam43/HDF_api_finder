@@ -1,0 +1,51 @@
+# 原始需求
+参考skill路径：
+/home/admin/cc/wksp/siakam_security_skills/hal_service_api_finder/hal-service-api-finder
+
+## 整体说明
+1 我需要开发一个单纯由markdown文档组成的skill，名字叫HDF-api-finder。 在当前路径创建一个HDF-api-finder文件夹，在文件夹内部创建SKILL.md文档。承载接下来的开发内容。
+2 核心功能: 根据hal层service服务的注册流程，识别指定serive对外提供的全部接口函数。
+3 SKILL风格和hal-service-api-finder保持一致，但SKILl正文里不要体现和hal-service-api-finder的关联性，两个skill独立使用
+
+## 流程与架构
+### 工具输入
+1 SKILL使用方法：/HDF-api-finder <project_dir> <conf>
+2 <conf>参数是一个配置文件，里面应该有如下几个字段的定义
+	- <service_name>, 内容为一个字符串，例如"ar_service"
+	- <stub_code>, 内容可能很多行，每行是一个文件夹的绝对路径，代表的意义是service定义的stub的代码范围，这些代码都是自动生成的。
+	- <vendor_code>，内容可能很多行，每行是一个文件夹的绝对路径，代表的意义是service相关的业务代码范围。
+	- <entry>，内容是一个源码文件的绝对路径加行号，例如/a/b/c.cpp:12。 指定分析入口OnRemoteRequest函数的位置。 这个参数是可选的，如果没写，需要skill自己寻找入口。
+2 确定源码分析范围<scope>：<stub_code> + <vendor_code> 所指定的目录内全部源码文件合在一起是本次任务的源码分析范围，全部分析，搜索都仅限在这个范围内进行。
+3 确认 macro.json 信息，逻辑和api-finder一致
+4 不再需要检查project_dir/.codegraph是否存在，本skill不使用codegraph，正文里不要出现这个工具
+5 初始化输出路径，没有文件夹则创建：project_dir/.ethunter_out/HDF-api-finder/<service_name>
+
+### 接口识别流程
+#### 一 定位分析入口OnRemoteRequest函数
+1.1 如果<conf>指定了<entry>，分析<entry>是否为OnRemoteRequest函数的定义位置。如果不是，报错并结束任务。
+1.2 如果<conf>没有指定<entry>，在源码分析范围<scope>内寻找全部符合条件的OnRemoteRequest函数作为分析入口。
+1.3 OnRemoteRequest函数是一个成员函数，所属类(为了描述方便，起名<stub class>)的特征为 OHOS::HDI::xxx::...::OnRemoteRequest, 命令空间以OHOS::HDI开始，<stub class>的父类是IPCObjectStub。 OnRemoteRequest函数有四个参数，类型分别为：uint32_t，MessageParcel&，MessageParcel&，MessageOption&。 第一个参数代表<cmdId>, 第二个参数代表<data>，都是来自client端的输入。
+
+#### 二 寻找impl类
+2.1 <stub class>会有一个sptr智能指针成员，通常命名impl_。这个指针会被初始化成impl类的实例（为了描述方便，起名<impl class>），<impl class>会在<vendor_code>中被实现，包含了实际接口的代码实现，与<stub class>中的stub接口一一对应。
+例如ar_service的<impl class>是OHOS::HDI::ActivityRecognition::V1_0::ArService, 而<stub class>是OHOS::HDI::ActivityRecognition::V1_0::ActivityInterfaceStub
+
+2.2 <stub class>和<impl class>有一定的特征
+ - 命名空间前缀相同
+ - stub接口函数和实际接口函数一一对应。 OnRemoteRequest函数内，会对<cmdId>进行分发，根据<cmdId>不同取值，调用不同的stub接口。这些stub接口内，通常会通过impl_智能指针调用impl接口。从stub接口的实现中可以找到stub接口和impl接口的对应关系。
+ - <impl class>定义在<vendor_code>范围内，<stub class>定义在<stub_code>范围内
+ - <stub class>和<impl class>的绑定关系可以从service注册的流程中被管理起来，hal-service-api-finder中就体现了service注册的流程，在bind阶段会绑定impl类。但实际代码场景中，service注册方式不止这一种，也有动态注册的场景。因此service注册流程也可以作为分析的特征之一，但service注册方式需要AI灵活识别。
+2.3 通过2.2的特征，请找到<impl class>的源码位置
+
+#### 三 impl接口识别
+3.1 分别分析全部<entry>OnRemoteRequest函数（当<conf>未指定时，可能不止一个OnRemoteRequest函数），记录当<cmdId>不同取值时，分别调用了哪些stub接口。
+3.2 分别追踪每个stub接口，分析最终调用了哪些impl接口。
+3.3 输出格式为JSON，记录OnRemoteRequest函数的位置和行号，再记录每种情况下，cmdId对应的宏或宏表达式（例如CMD_ACTIVITY_INTERFACE_GET_VERSION），cmdId的实际取值(例如0)，stub接口函数名，stub接口函数源码文件（绝对路径），impl接口函数名，impl接口函数源码文件（绝对路径）。输出文件为project_dir/.ethunter_out/HDF-api-finder/<service_name>/<service_name>_api.json
+
+## 要求
+1 整个skill的提示词都用中文。 注意相同语义的用词前后保持一致。
+2 本skill包含长任务（多个cmdId待分析），提示词应通过规范方式防止任务遗忘。  分析的每一个步骤都要保存中间结果，方便调试，更方便断点续分析。 本skill的每一步中间结果可以记录在一个文件中。
+3 全部任务由主agent完成，不需要sub-agent并行分析。 
+4 整个skill在处理c++函数名时，要注意作用域，函数名最好附带前面的作用域。
+5 本skill无需任务恢复机制，“搜索方法与纪律”，“文件存在性检查方法”，“out备份”都参考hal-service-api-finder来实现。
+6 需求文档里的例子不要直接体现在skill正文中，必要时脱敏处理
