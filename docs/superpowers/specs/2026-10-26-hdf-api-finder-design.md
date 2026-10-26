@@ -4,6 +4,7 @@
 - 状态：设计已确认，待实现
 - 目标文件：`HDF-api-finder/SKILL.md`
 - 交付形式：纯 markdown skill，单文件，无可执行代码
+- 增量更新：`2026-10-26-hdf-api-finder-system-impl-trace-design.md`（system 初始 impl 追踪）；冲突处以增量设计为准
 
 ## 1. 背景与目标
 
