@@ -530,7 +530,7 @@ Expected: 得到第七章、第八章起始行与 7.2/7.5/7.6 小节行号。
 ```text
 | `impl_overload_ambiguous` | 映射 | 方法或下一跳调用重载无法按实参唯一确定 |
 | `target_not_enumerable` | 映射/分支 | 选中调用点的动态目标无法静态枚举：无赋值点、`dlsym` 表达式完全由运行时段构成且不可枚举、符号模式无字面量段等 |
-| `trace_no_candidate` | 映射 | 当前函数没有可信的调用点候选 |
+| `trace_no_candidate` | 映射/分支 | 当前函数没有可信的调用点候选 |
 ```
 
 - [ ] **Step 5: 验证第七章**
