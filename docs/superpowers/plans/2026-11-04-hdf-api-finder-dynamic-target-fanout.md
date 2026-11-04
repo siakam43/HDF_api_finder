@@ -219,8 +219,8 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 3. 解析每个调用点的目标集合（元素为 `(函数限定名, 定义文件, 定义行)`）：
    - 直接调用：定义唯一 → 单目标；重载无法按实参唯一确定 → 该调用点 `impl_overload_ambiguous`，不参与打分；定义不在 scope → `definition_not_found`，不参与打分。
    - 虚函数调用：收集 vendor + system 域内全部 override；静态类型上的声明方法非纯虚且 scope 内有函数体时，静态定义本身也计入；无 override 且无函数体 → `definition_not_found`，不参与打分。
-   - 函数指针/回调/成员函数指针调用：在 vendor + system 域回溯该指针的赋值点（`=&F`、`=F`、`=&C::M`、`=dlsym(...)`、注册点直接赋值）。赋值点先按完整指针表达式（含接收者文本）匹配，无命中再按成员/变量名匹配，并在 `target_evidence.lookup` 记录 `full_expression` 或 `member_name`。`dlsym` 第二参数按字面量段固定、运行时段通配解析；运行时段先在 scope 内枚举常量值（字面量、`const`、`constexpr`、枚举、宏、多点赋值），可枚举则精确匹配，否则通配；按非限定函数名匹配有函数体的函数定义（free function 或成员函数），同名重载或同符号多定义全部保留。所有赋值目标与符号匹配目标按 `(函数, 文件, 行)` 去重。个别赋值点 RHS 无法解析 → 该 RHS 记 `definition_not_found` 或 `target_not_enumerable` 子项，不影响其他 RHS。找不到任何赋值点，或符号表达式无字面量段且运行时段不可枚举 → `target_not_enumerable`，不参与打分。
-   - 目标集合为空 → 该调用点不参与打分；全部调用点都为空时，若存在 `target_not_enumerable` 拒绝记录，当前分支记 `target_not_enumerable`，否则记 `trace_no_candidate`，终止。
+   - 函数指针/回调/成员函数指针调用：在 vendor + system 域回溯该指针的赋值点（`=&F`、`=F`、`=&C::M`、`=dlsym(...)`、注册点直接赋值）。赋值点先按完整指针表达式（含接收者文本）匹配，无命中再按成员/变量名匹配，并在 `target_evidence.lookup` 记录 `full_expression` 或 `member_name`。`dlsym` 第二参数按字面量段固定、运行时段通配解析；运行时段先在 scope 内枚举常量值（字面量、`const`、`constexpr`、枚举、宏、多点赋值），可枚举则精确匹配，否则通配；按非限定函数名匹配有函数体的函数定义（free function 或成员函数），同名重载或同符号多定义全部保留。所有赋值目标与符号匹配目标按 `(函数, 文件, 行)` 去重。个别赋值点 RHS 无法解析 → 该 RHS 在候选评估中记 `definition_not_found` 或 `target_not_enumerable` 子项，不影响其他 RHS。找不到任何赋值点，或符号表达式无字面量段且运行时段不可枚举 → `target_not_enumerable`，不参与打分。
+   - 目标集合为空 → 该调用点不参与打分；全部调用点的目标集合都为空时，若存在 `target_not_enumerable` 拒绝记录，当前分支记 `target_not_enumerable`，否则记 `trace_no_candidate`，终止。
 4. 多信号打分（评分对象是调用表达式；名称与命名空间信号按目标集合中最匹配的目标计算）：
    1. 实参包含 stub 传入的 data/reply 或派生值；
    2. 方法名相同，或去掉命名空间/类限定后是前缀/后缀扩展且多出部分 ≤ 8 字符；
@@ -345,10 +345,11 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 
 字段与规则：
 
-- `final_impl_functions` 每个元素对应一条进入追踪的扇出分支的最终接口；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
+- `final_impl_functions` 每个元素对应一条最终接口（追踪分支或 6.4 直通映射）；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
 - `target_evidence` 汇总该分支上每次目标级选择产生的证据；直接单目标且无动态选择时可为空数组。
 - `target_evidence.match` 取值：`direct_assign` / `dlsym_exact` / `dlsym_glob` / `virtual_override` / `base_implementation`。
-- `target_evidence.lookup` 仅用于直接赋值目标，取值 `full_expression` / `member_name`；`virtual_override` / `base_implementation` 记录声明或定义位置与表达式。
+- `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 记录精确符号名。
+- `target_evidence.lookup` 用于赋值点匹配得到的目标（`direct_assign` / `dlsym_exact` / `dlsym_glob`），取值 `full_expression` / `member_name`；`virtual_override` / `base_implementation` 记录声明或定义位置与表达式。
 - `tie_break` 为可选字段，仅出现在发生并列选择的 trace 条目；`candidates` 记录参与并列的调用与分数，`chosen` 记录选中项，`reason` 固定为 `source_order`。
 - `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，`tried` 合并去重，保留排序后第一条分支的 trace。
 - `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null，取排序后第一条失败分支的原因；没有任何失败分支记录时记 `final_impl_not_found`。
@@ -964,7 +965,7 @@ grep -nE 'codegraph|hal-service-api-finder|ar_service|ActivityRecognition|Activi
 grep -nE 'TBD|TODO|待定|FIXME|XXX' HDF-api-finder/SKILL.md || echo "placeholders=none"
 grep -n 'trace_ambiguous' HDF-api-finder/SKILL.md || echo "trace_ambiguous=absent"
 grep -n '单线路追踪' HDF-api-finder/SKILL.md || echo "old_term=absent"
-grep -n '"final_impl_function"\|"final_impl_file"\|"final_impl_class"' HDF-api-finder/SKILL.md || echo "old_fields=absent"
+grep -nE 'final_impl_function["`]|final_impl_file["`]|final_impl_class["`]' HDF-api-finder/SKILL.md || echo "old_fields=absent"
 ```
 
 Expected: `forbidden_strings=none`、`placeholders=none`、`trace_ambiguous=absent`、`old_term=absent`、`old_fields=absent`。
