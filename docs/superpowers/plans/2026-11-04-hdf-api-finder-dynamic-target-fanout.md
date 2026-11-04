@@ -604,6 +604,8 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 13. `final_impl_functions` 已按 `(函数, 文件, 行)` 去重；`target_evidence` 已合并去重。
 14. 每个 `status = "done"` 的用例至少一个 `impl_interfaces` 元素，每个元素 `evidence_chain` 非空。
 15. 部分失败分支只出现在 unresolved 记录中，不得混入最终 JSON。
+
+第 11–15 项为写盘前检查，必须在第 9–10 项写盘之前执行。
 ```
 
 - [ ] **Step 3: 更新自检失败范围**
@@ -769,10 +771,10 @@ for t in '调用点选择' '目标级扇出' '追踪分支' 'tie_break' '目标�
   grep -q "$t" HDF-api-finder/SKILL.md || echo "missing $t"
 done
 awk '/^## 十、/{f=1} /^## 十一、/{f=0} f' HDF-api-finder/SKILL.md | grep -q '单线路追踪' && echo "old_term_in_chapter10=present" || echo "old_term_in_chapter10=absent"
-grep -q '自检第 1–8 项或第 11–15 项失败' HDF-api-finder/SKILL.md || echo "missing self_check range"
+awk '/^### 全局错误码/{f=1} /^### 部分失败/{f=0} f' HDF-api-finder/SKILL.md | grep -q '| `self_check_failed` | 自检第 1–8 项或第 11–15 项失败 |' || echo "missing self_check row"
 ```
 
-Expected: 无 `missing ...`；`old_term_in_chapter10=absent`。
+Expected: 无 `missing ...`（含 `missing self_check row`）；`old_term_in_chapter10=absent`。
 
 ---
 
