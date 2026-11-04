@@ -877,15 +877,15 @@ Expected: 无 `missing ...`。
 ````markdown
 ### 示例四：动态目标扇出
 
-`DemoSystemService::VendorOpen` 内同时调用 `CheckUpdate()` 与 `demoHalInf.demoHalOpen(...)`；打分选中后者。`demoHalInf.demoHalOpen` 由 `dlsym(handle, "demo_hal_open" + variant)` 赋值，`variant` 运行时决定，按 `demo_hal_open*` 匹配到 `demo_hal_open_a` 与 `demo_hal_open_b` 两个实现。
+`DemoSystemService::VendorOpen` 内同时调用 `CheckUpdate()` 与 `demoHalInf.demoHalOpen(...)`；打分选中后者。`demoHalInf.demoHalOpen` 由 `dlsym(handle, "demo_hal_open" + variant)` 赋值，`variant` 运行时决定且不可静态枚举，按 `demo_hal_open*` 匹配到 `demo_hal_open_a` 与 `demo_hal_open_b` 两个实现。
 
-1. 目标级扇出：两个实现各建一条分支，分别追到 `DemoVendorA::HalOpen` 与 `DemoVendorB::HalOpen`。
+1. 目标级扇出：两个实现各建一条分支，分别调用 vendor 类成员 `DemoVendorA::HalOpen` 与 `DemoVendorB::HalOpen`，作为最终接口。
 2. `02_impl.json` 的该映射记录含两个 `final_impl_functions` 元素，各自带分支 trace 与 `target_evidence`。
 3. 最终 JSON 对同一 cmdId 输出两条 case，并列展示两个最终接口。
 
 ### 示例五：调用点并列取首
 
-若 `CheckUpdate()` 与 `demoHalInf.demoHalOpen(...)` 分数相同，按当前函数体内源码顺序取第一个，并在 trace 中记录：
+若 `CheckUpdate()` 与 `demoHalInf.demoHalOpen(...)` 分数相同，按当前函数体内源码顺序取第一个，并在该 trace 条目中记录以下 `tie_break` 片段：
 
 ```json
 {
