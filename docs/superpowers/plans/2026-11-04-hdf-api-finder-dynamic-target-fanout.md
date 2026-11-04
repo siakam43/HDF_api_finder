@@ -215,28 +215,30 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 从当前中间函数出发循环。调用点选择保持单线路；调用目标动态不唯一时全部分支追踪。
 
 1. 完整读取当前函数定义；定义不在 scope 或无法唯一确定 → 当前分支 `definition_not_found`，终止。
-2. 收集调用点候选：成员调用、虚函数调用、free 函数调用、可静态确定的函数指针/回调；排除日志/断言/纯校验/构造/析构/运算符/框架 sbuf-parcel 转换。
-3. 解析每个调用点的目标集合：
+2. 收集调用点候选：成员调用、虚函数调用、free 函数调用、可识别为函数指针/回调的调用（目标集合按第 3 步解析）；排除日志/断言/纯校验/构造/析构/运算符/框架 sbuf-parcel 转换。
+3. 解析每个调用点的目标集合（元素为 `(函数限定名, 定义文件, 定义行)`）：
    - 直接调用：定义唯一 → 单目标；重载无法按实参唯一确定 → 该调用点 `impl_overload_ambiguous`，不参与打分；定义不在 scope → `definition_not_found`，不参与打分。
-   - 虚函数调用：收集 vendor + system 域内全部 override；静态方法非纯虚且 scope 内有函数体时，静态定义本身也计入；无 override 且无函数体 → `definition_not_found`，不参与打分。
-   - 函数指针/回调/成员函数指针调用：在 vendor + system 域回溯该指针的赋值点（`=&F`、`=F`、`=&C::M`、`=dlsym(...)`、注册点直接赋值）。`dlsym` 第二参数按字面量段固定、运行时段通配解析；运行时段先在 scope 内枚举常量值（字面量、`const`、`constexpr`、枚举、宏、多点赋值），可枚举则精确匹配，否则通配；按非限定函数名匹配有函数体的函数定义。所有赋值目标与符号匹配目标按 `(函数, 文件, 行)` 去重。找不到赋值点，或符号表达式无字面量段且运行时段不可枚举 → `target_not_enumerable`，不参与打分。
-   - 目标集合为空 → 该调用点不参与打分；全部调用点都为空 → 当前分支 `trace_no_candidate`，终止。
+   - 虚函数调用：收集 vendor + system 域内全部 override；静态类型上的声明方法非纯虚且 scope 内有函数体时，静态定义本身也计入；无 override 且无函数体 → `definition_not_found`，不参与打分。
+   - 函数指针/回调/成员函数指针调用：在 vendor + system 域回溯该指针的赋值点（`=&F`、`=F`、`=&C::M`、`=dlsym(...)`、注册点直接赋值）。赋值点先按完整指针表达式（含接收者文本）匹配，无命中再按成员/变量名匹配，并在 `target_evidence.lookup` 记录 `full_expression` 或 `member_name`。`dlsym` 第二参数按字面量段固定、运行时段通配解析；运行时段先在 scope 内枚举常量值（字面量、`const`、`constexpr`、枚举、宏、多点赋值），可枚举则精确匹配，否则通配；按非限定函数名匹配有函数体的函数定义（free function 或成员函数），同名重载或同符号多定义全部保留。所有赋值目标与符号匹配目标按 `(函数, 文件, 行)` 去重。个别赋值点 RHS 无法解析 → 该 RHS 记 `definition_not_found` 或 `target_not_enumerable` 子项，不影响其他 RHS。找不到任何赋值点，或符号表达式无字面量段且运行时段不可枚举 → `target_not_enumerable`，不参与打分。
+   - 目标集合为空 → 该调用点不参与打分；全部调用点都为空时，若存在 `target_not_enumerable` 拒绝记录，当前分支记 `target_not_enumerable`，否则记 `trace_no_candidate`，终止。
 4. 多信号打分（评分对象是调用表达式；名称与命名空间信号按目标集合中最匹配的目标计算）：
    1. 实参包含 stub 传入的 data/reply 或派生值；
    2. 方法名相同，或去掉命名空间/类限定后是前缀/后缀扩展且多出部分 ≤ 8 字符；
    3. 接收者是下一层服务对象，不是日志/校验/框架 helper；
    4. 返回值被返回或用于构造 reply；
    5. 命名空间/接口类型匹配。
-5. 唯一最高分 → 选中；并列 → 按源码顺序取第一个，并在 trace 中记录 `tie_break`（候选、分数、选中项、原因 `source_order`）。
+
+   data/reply 派生值只做轻量识别：直接参数、简单别名、`&`/`*`、成员访问、`ReadXxx()` 返回值、`SbufToParcel` 后的 parcel；不做跨函数污点传播。
+5. 唯一最高分 → 选中；并列 → 按源码顺序取第一个，并在 trace 中记录 `tie_break`（候选、分数、选中项、原因 `source_order`）；无有效候选 → 当前分支 `trace_no_candidate`，终止。
 6. 对选中调用点的目标集合逐目标建立分支：
    - 目标集合大小 1 → 单分支；大于 1 → 目标级扇出，每个目标创建独立分支，继承当前分支 trace 与 visited 副本；可递归扇出。
-   - 目标按 `(定义文件, 定义行)` 升序处理。
+   - 目标按 `(定义文件, 定义行)` 升序处理；分支按目标解析的深度优先遍历顺序排序，用于去重与失败原因取首。
    - 最终接口：vendor 类成员函数，且类定义与函数定义都在 vendor → 记录到 `final_impl_functions`（含该分支 trace 与 `target_evidence`），分支结束。
    - 中间层：system 函数、vendor free function、所属类不在 vendor、vendor 类但函数/类定义不在 vendor → trace 追加该目标与调用证据，继续步骤 1。
 7. visited 每分支独立，键 `(文件, 函数签名行)`，只含当前分支祖先；同一分支重复 → `cycle`。分支间不共享 visited，DAG 收敛不视为环。
-8. 分支终止原因：`definition_not_found`、`target_not_enumerable`、`trace_no_candidate`、`cycle`、`final_impl_not_found`；失败分支记入 `unresolved_branches`，其他分支继续。
+8. 分支终止原因：`definition_not_found`、`target_not_enumerable`、`trace_no_candidate`、`cycle`；失败分支记入 `unresolved_branches`，其他分支继续。`final_impl_not_found` 是映射级汇总原因，不作为分支终止原因。
 9. 不设深度上限，不设扇出上限。
-10. 合并：最终接口按 `(函数, 文件, 行)` 去重；同一最终接口来自多条分支时保留排序后第一条分支的 trace，`target_evidence` 合并去重；`final_impl_functions` 非空 → 映射记录 `status = "resolved"`。
+10. 合并：最终接口按 `(函数, 文件, 行)` 去重；同一最终接口来自多条分支时保留排序后第一条分支的 trace，`target_evidence` 合并去重；`final_impl_functions` 非空 → 映射记录 `status = "resolved"`；全部分支失败或目标集合始终为空 → `status = "unresolved"`，`unresolved_reason` 取排序后第一条失败分支的原因，若没有任何失败分支记录则记 `final_impl_not_found`。
 
 补充：
 
@@ -316,6 +318,7 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
                   "line": 120,
                   "expression": "demoHalInf.demoHalOpen = (fn)dlsym(handle, \"demo_hal_open\" + variant)",
                   "match": "dlsym_glob",
+                  "lookup": "full_expression",
                   "pattern": "demo_hal_open*"
                 }
               ]
@@ -342,12 +345,13 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 
 字段与规则：
 
-- `final_impl_functions` 每个元素对应一条扇出分支的最终接口；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`。
+- `final_impl_functions` 每个元素对应一条进入追踪的扇出分支的最终接口；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
 - `target_evidence` 汇总该分支上每次目标级选择产生的证据；直接单目标且无动态选择时可为空数组。
 - `target_evidence.match` 取值：`direct_assign` / `dlsym_exact` / `dlsym_glob` / `virtual_override` / `base_implementation`。
+- `target_evidence.lookup` 仅用于直接赋值目标，取值 `full_expression` / `member_name`；`virtual_override` / `base_implementation` 记录声明或定义位置与表达式。
 - `tie_break` 为可选字段，仅出现在发生并列选择的 trace 条目；`candidates` 记录参与并列的调用与分数，`chosen` 记录选中项，`reason` 固定为 `source_order`。
-- `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，`tried` 合并去重。
-- `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null。
+- `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，`tried` 合并去重，保留排序后第一条分支的 trace。
+- `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null，取排序后第一条失败分支的原因；没有任何失败分支记录时记 `final_impl_not_found`。
 - 元素按 `(函数, 文件, 行)` 去重，`target_evidence` 合并去重。
 - 入口级 `impl_classes` 语义不变：全部最终 vendor 类按 `(impl_class, impl_file)` 去重排序。
 - 写入失败 → 写 `error.json`（`phase=resolve_impl`，`code=snapshot_write_failed`），停止。
