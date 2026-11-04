@@ -5,6 +5,7 @@
 - 目标文件：`HDF-api-finder/SKILL.md`
 - 交付形式：纯 markdown skill，单文件，无可执行代码
 - 增量更新：`2026-10-26-hdf-api-finder-system-impl-trace-design.md`（system 初始 impl 追踪）；冲突处以增量设计为准
+- 增量更新：`2026-11-04-hdf-api-finder-dynamic-target-fanout-design.md`（动态目标扇出）；冲突处以增量设计为准
 
 ## 1. 背景与目标
 

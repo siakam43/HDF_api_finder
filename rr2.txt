@@ -1,0 +1,14 @@
+优化skill：HDF-api-finder
+当前skill有一个原则：遇到并列的分支，标记“trace_ambiguous”，不猜测。在“六、阶段二：定位 impl 类”的“6.5 单线路追踪”小节中定义了从初始impl类追踪最终impl类的方法。 这里的单线路定义有点绝对。我举个例子说明我希望的效果：
+'''c
+void NfcVendorAdaptions::VendorOpen(){
+	...
+	CheckFirmwareUpdate();
+    int ret = nfcHalInf.nfcHalOpen(pCback, pDataCback);
+    ...
+}
+'''
+这里VendorOpen函数是impl类的成员函数，从最初的stub接口调用过来的。但VendorOpen不是最终接口，因为没有定义在vendor_code中。因此需要判断VendorOpen下一层接口是哪一个。这里我们需要使用单线路规则，即在判断下一级接口的调用点时，只选择一个。这里的备选可能有很多，因为VendorOpen函数内有多个函数调用（例如CheckFirmwareUpdate()），但通过信号打分，我们选择唯一的nfcHalInf.nfcHalOpen。
+但在接下来的分析中，我们发现nfcHalInf这个指针的初始化可能存在多种情况，是动态决定的。 （nfcHalOpen 由 dlsym(handle, \"phNxpNciHal_open\" + suffix) 赋值，suffix 运行时由芯片类型决定）。这种情况下，虽然在选择调用点时是单线路，但调用点指向的调用目标可能是并列的。 即nfcHalInf可能指向不同的impl类，因此nfcHalOpen有多种不同的实现函数。
+当前skill在这种情况下会中止分析，认为路线出现并列情况。我希望可以修改成，将scope内全部满足目标的nfcHalOpen都作为下一步的接口备选继续追踪，而不是停止。
+这种情况下，就可能会出现一个entry的一个cmd对应多个接口的情况，在最终输出中并列展示即可。  这里的原则就是，实际impl类是动态决定的，我们就认为每种情况都是合理的。

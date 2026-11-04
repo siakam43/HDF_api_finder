@@ -4,6 +4,7 @@
 - 状态：设计已确认，待实现
 - 目标文件：`HDF-api-finder/SKILL.md`
 - 基础设计：`docs/superpowers/specs/2026-10-26-hdf-api-finder-design.md`
+- 后续增量：`docs/superpowers/specs/2026-11-04-hdf-api-finder-dynamic-target-fanout-design.md`（动态目标扇出）；冲突处以该设计为准。
 - 本设计为增量设计；与基础设计冲突处，以本设计为准。
 
 ## 1. 背景与目标
