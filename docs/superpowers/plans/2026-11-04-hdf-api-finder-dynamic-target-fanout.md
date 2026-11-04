@@ -50,7 +50,7 @@ docs/superpowers/specs/2026-10-26-hdf-api-finder-system-impl-trace-design.md
 **Files:**
 - Add: `docs/superpowers/plans/2026-11-04-hdf-api-finder-dynamic-target-fanout.md`
 
-- [ ] **Step 1: 确认工作区状态**
+- [x] **Step 1: 确认工作区状态**
 
 Run:
 
@@ -60,7 +60,7 @@ git status --short
 
 Expected: 本计划为未跟踪文件；`HDF-api-finder/SKILL.md` 尚未修改；增量设计无未提交改动。
 
-- [ ] **Step 2: 提交计划**
+- [x] **Step 2: 提交计划**
 
 Run:
 
@@ -76,7 +76,7 @@ EOF
 
 Expected: 提交成功，包含 1 个文件。
 
-- [ ] **Step 3: 验证提交**
+- [x] **Step 3: 验证提交**
 
 Run:
 
@@ -133,7 +133,21 @@ Expected: 两处都有命中。
 10. **调用点单线路与目标级扇出。** 调用点选择用多信号打分只选一个，并列按源码顺序取第一个并记录 `tie_break`；被选中调用点的目标动态不唯一时（函数指针、回调、`dlsym` 符号、多个 virtual override），把 vendor + system 域内全部静态可枚举目标作为下一跳分支继续追踪，不得判并列歧义、不得只选一个；最终接口必须是 vendor 类成员函数，且类定义与函数定义都在 vendor；vendor free function、system 函数、非 vendor 类成员只是中间层。
 ```
 
-- [ ] **Step 4: 验证第一章**
+- [ ] **Step 4: 替换原则 9**
+
+将：
+
+```text
+9. **impl 定位顺序。** S1 特征匹配 → S2 命名启发式 → S3 绑定点与注册流程；S1/S2/S3 在 vendor + system 两域统一搜索，S3 绝不在 stub 域搜索；初始 impl 在 system 时，按 stub 接口函数做单线路追踪。
+```
+
+替换为：
+
+```text
+9. **impl 定位顺序。** S1 特征匹配 → S2 命名启发式 → S3 绑定点与注册流程；S1/S2/S3 在 vendor + system 两域统一搜索，S3 绝不在 stub 域搜索；初始 impl 在 system 时，按 stub 接口函数做调用点单线路选择与目标级扇出追踪。
+```
+
+- [ ] **Step 5: 验证第一章**
 
 Run:
 
@@ -163,7 +177,19 @@ grep -n '^### 6.4\|^### 6.5\|^### 6.6\|^### 6.7' HDF-api-finder/SKILL.md
 
 Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 
-- [ ] **Step 2: 替换 6.4 第 4、5 步**
+- [ ] **Step 2: 更新第六章引言与 6.4 第 4、5 步**
+
+将：
+
+```text
+阶段二做三件事：定位初始 impl 类、把每个 stub 接口函数映射到初始 impl 方法、必要时做单线路追踪到 vendor 最终接口，最后写出 `02_impl.json`。本阶段不枚举 cmdId 用例。
+```
+
+替换为：
+
+```text
+阶段二做三件事：定位初始 impl 类、把每个 stub 接口函数映射到初始 impl 方法、必要时做调用点单线路选择与目标级扇出追踪到 vendor 最终接口，最后写出 `02_impl.json`。本阶段不枚举 cmdId 用例。
+```
 
 将：
 
@@ -888,6 +914,7 @@ import re, json
 text = open('HDF-api-finder/SKILL.md', encoding='utf-8').read()
 blocks = re.findall(r'```json\n(.*?)```', text, re.S)
 objs = [json.loads(b) for b in blocks]
+assert len(blocks) >= 8, 'expected at least 8 json blocks'
 print(f"json_blocks={len(blocks)}")
 final_entries = 0
 impl_records = 0
@@ -1145,7 +1172,7 @@ Run:
 git status -sb
 ```
 
-Expected: 记录 `main` 领先 `origin/main` 的提交数；本次不执行 `git push`，等待用户授权。
+Expected: 记录 `## feature/dynamic-target-fanout`（无 upstream）；本次不执行 `git push`，等待用户授权。
 
 ---
 
