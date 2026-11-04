@@ -116,7 +116,7 @@ Expected: 两处都有命中。
 替换为：
 
 ```text
-5. **证据优先，不臆造。** 每个入口、每个 cmdId 值、每个 stub/impl 对应关系都要有代码证据；调用点打分并列必须记录 `tie_break`（候选、分数、选中项），目标级扇出必须记录 `target_evidence`；无法确定的分析项写入 unresolved，记录 `detail` 与 `tried`，不得猜测。
+5. **证据优先，不臆造。** 每个入口、每个 cmdId 值、每个 stub/impl 对应关系都要有代码证据；调用点打分并列必须记录 `tie_break`（候选、分数、选中项、原因 `source_order`），目标级扇出必须记录 `target_evidence`；无法确定的分析项写入 unresolved，记录 `detail` 与 `tried`，不得猜测。
 ```
 
 - [ ] **Step 3: 替换原则 10**
@@ -348,11 +348,11 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 - `final_impl_functions` 每个元素对应一条最终接口（追踪分支或 6.4 直通映射）；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
 - `target_evidence` 汇总该分支上每次目标级选择产生的证据；直接单目标且无动态选择时可为空数组。
 - `target_evidence.match` 取值：`direct_assign` / `dlsym_exact` / `dlsym_glob` / `virtual_override` / `base_implementation`。
-- `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 记录精确符号名。
+- `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 在 `pattern` 记录精确符号名。
 - `target_evidence.lookup` 用于赋值点匹配得到的目标（`direct_assign` / `dlsym_exact` / `dlsym_glob`），取值 `full_expression` / `member_name`；`virtual_override` / `base_implementation` 记录声明或定义位置与表达式。
 - `tie_break` 为可选字段，仅出现在发生并列选择的 trace 条目；`candidates` 记录参与并列的调用与分数，`chosen` 记录选中项，`reason` 固定为 `source_order`。
 - `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，`tried` 合并去重，保留排序后第一条分支的 trace。
-- `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null，取排序后第一条失败分支的原因；没有任何失败分支记录时记 `final_impl_not_found`。
+- `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null：进入 6.5 的映射取排序后第一条失败分支的原因，若没有任何失败分支记录则记 `final_impl_not_found`；6.2/6.4 已设置的 `unresolved_reason` 保持不变。
 - 元素按 `(函数, 文件, 行)` 去重，`target_evidence` 合并去重。
 - 入口级 `impl_classes` 语义不变：全部最终 vendor 类按 `(impl_class, impl_file)` 去重排序。
 - 写入失败 → 写 `error.json`（`phase=resolve_impl`，`code=snapshot_write_failed`），停止。
@@ -965,7 +965,7 @@ grep -nE 'codegraph|hal-service-api-finder|ar_service|ActivityRecognition|Activi
 grep -nE 'TBD|TODO|待定|FIXME|XXX' HDF-api-finder/SKILL.md || echo "placeholders=none"
 grep -n 'trace_ambiguous' HDF-api-finder/SKILL.md || echo "trace_ambiguous=absent"
 grep -n '单线路追踪' HDF-api-finder/SKILL.md || echo "old_term=absent"
-grep -nE 'final_impl_function["`]|final_impl_file["`]|final_impl_class["`]' HDF-api-finder/SKILL.md || echo "old_fields=absent"
+grep -nE 'final_impl_function["`]|final_impl_file["`]|final_impl_class["`]|final_impl_line["`]|final_impl_class_file["`]' HDF-api-finder/SKILL.md || echo "old_fields=absent"
 ```
 
 Expected: `forbidden_strings=none`、`placeholders=none`、`trace_ambiguous=absent`、`old_term=absent`、`old_fields=absent`。

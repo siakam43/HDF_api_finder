@@ -86,7 +86,7 @@
    - 运行时拼接段先尝试在 scope 内枚举常量值（字面量、`const`、`constexpr`、枚举、宏、多点赋值），可枚举则生成精确符号名；
    - 不可枚举的运行时段视为通配；
    - 按**非限定函数名**在 vendor+system 域匹配有函数体的函数定义（free function 或成员函数），全部命中加入目标集合。
-   - 字符串表达式完全由运行时段构成、没有可匹配的字面量段 → 目标集合为空，记 `target_not_enumerable`。
+   - 字符串表达式完全由运行时段构成、没有可匹配的字面量段，且运行时段不可枚举 → 目标集合为空，记 `target_not_enumerable`。
 5. 直接赋值目标与符号匹配目标按 `(函数, 文件, 行)` 去重。
 6. 同名重载或同符号多定义全部保留为目标，不按名称猜测唯一。
 7. 找不到任何赋值点 → 目标集合为空，该调用点在候选评估中记 `target_not_enumerable`（写入候选证据），不参与打分。
@@ -130,7 +130,7 @@ data/reply 派生值只做轻量识别：直接参数、简单别名、`&`/`*`�
 1. 最终接口按 `(函数, 文件, 行)` 去重；分支按目标解析的深度优先遍历顺序排序；同一最终接口来自多条分支时，保留排序后第一条分支的 trace，`target_evidence` 合并去重。
 2. `final_impl_functions` 非空 → 映射记录 `status = "resolved"`。
 3. 失败分支全部记入 `unresolved_branches`；部分失败不影响 resolved 结论。
-4. 全部分支失败或目标集合始终为空 → `status = "unresolved"`，`unresolved_reason` 取排序后第一条失败分支的原因；若没有任何失败分支记录，记为 `final_impl_not_found`。
+4. 进入 4.5 追踪的映射，全部分支失败或目标集合始终为空 → `status = "unresolved"`，`unresolved_reason` 取排序后第一条失败分支的原因；若没有任何失败分支记录，记为 `final_impl_not_found`；6.2/6.4 已设置的 `unresolved_reason` 保持不变。
 5. `tie_break` 记录在发生并列选择的 trace 条目中。
 6. 入口 `status` 语义不变：至少一条映射记录 resolved 即为 resolved，否则 unresolved。
 7. `unresolved_branches` 按 `(kind, detail)` 去重，`tried` 合并去重。
@@ -193,11 +193,11 @@ data/reply 派生值只做轻量识别：直接参数、简单别名、`&`/`*`�
 - `final_impl_functions` 每个元素对应一条最终接口（追踪分支或 6.4 直通映射）；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
 - `target_evidence` 汇总该分支上每次目标级选择产生的证据；直接单目标且无动态选择时可为空数组。
 - `target_evidence.match` 取值：`direct_assign` / `dlsym_exact` / `dlsym_glob` / `virtual_override` / `base_implementation`。
-- `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 记录精确符号名。
+- `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 在 `pattern` 记录精确符号名。
 - `target_evidence.lookup` 用于赋值点匹配得到的目标（`direct_assign` / `dlsym_exact` / `dlsym_glob`），取值 `full_expression` / `member_name`；`virtual_override` / `base_implementation` 记录声明或定义位置与表达式。
 - `tie_break` 为可选字段，仅出现在发生并列选择的 trace 条目；`candidates` 记录参与并列的调用与分数，`chosen` 记录选中项，`reason` 固定为 `source_order`。
 - `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，保留排序后第一条分支的 trace。
-- `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null，取排序后第一条失败分支的原因；没有任何失败分支记录时记 `final_impl_not_found`。
+- `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null：进入 6.5 的映射取排序后第一条失败分支的原因，若没有任何失败分支记录则记 `final_impl_not_found`；6.2/6.4 已设置的 `unresolved_reason` 保持不变。
 - 元素按 `(函数, 文件, 行)` 去重，`target_evidence` 合并去重。
 - 入口级 `impl_classes` 语义不变：全部最终 vendor 类按 `(impl_class, impl_file)` 去重排序。
 - 写入失败 → `error.json`（`phase=resolve_impl`，`code=snapshot_write_failed`），停止。
