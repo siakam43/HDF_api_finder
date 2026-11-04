@@ -327,7 +327,7 @@ data/reply 派生值只做轻量识别：直接参数、简单别名、`&`/`*`�
 2. 目标解析：赋值点命中 `dlsym`，运行时变量 `variant` 不可枚举，按 `demo_hal_open*` 通配匹配两个实现。
 3. 目标级扇出：两条分支分别追到 `DemoVendorA::HalOpen` 与 `DemoVendorB::HalOpen`。
 4. `02_impl.json` 的该映射记录含两个 `final_impl_functions` 元素。
-5. 阶段三对同一 cmdId 生成两条 case；最终 JSON 并列输出。
+5. 最终 JSON 对同一 cmdId 输出两条 case，并列展示两个最终接口。
 
 并列场景示例：若 `CheckUpdate()` 与 `demoHalInf.demoHalOpen(...)` 分数相同，按源码顺序取第一个并在 trace 中记录 `tie_break`，继续追踪不中止。
 

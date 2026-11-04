@@ -881,7 +881,7 @@ Expected: 无 `missing ...`。
 
 1. 目标级扇出：两个实现各建一条分支，分别追到 `DemoVendorA::HalOpen` 与 `DemoVendorB::HalOpen`。
 2. `02_impl.json` 的该映射记录含两个 `final_impl_functions` 元素，各自带分支 trace 与 `target_evidence`。
-3. 阶段三对同一 cmdId 生成两条 case；最终 JSON 并列输出两个最终接口。
+3. 最终 JSON 对同一 cmdId 输出两条 case，并列展示两个最终接口。
 
 ### 示例五：调用点并列取首
 
