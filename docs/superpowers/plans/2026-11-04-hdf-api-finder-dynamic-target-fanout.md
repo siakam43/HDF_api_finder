@@ -94,7 +94,7 @@ Expected: 作者为 `siakam43 <429872468@qq.com>`；工作区无未提交改动�
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第一章）
 
-- [ ] **Step 1: 确认旧文本存在**
+- [x] **Step 1: 确认旧文本存在**
 
 Run:
 
@@ -105,7 +105,7 @@ grep -n '单线路追踪与最终接口' HDF-api-finder/SKILL.md
 
 Expected: 两处都有命中。
 
-- [ ] **Step 2: 替换原则 5**
+- [x] **Step 2: 替换原则 5**
 
 将：
 
@@ -119,7 +119,7 @@ Expected: 两处都有命中。
 5. **证据优先，不臆造。** 每个入口、每个 cmdId 值、每个 stub/impl 对应关系都要有代码证据；调用点打分并列必须记录 `tie_break`（候选、分数、选中项、原因 `source_order`），目标级扇出必须记录 `target_evidence`；无法确定的分析项写入 unresolved，记录 `detail` 与 `tried`，不得猜测。
 ```
 
-- [ ] **Step 3: 替换原则 10**
+- [x] **Step 3: 替换原则 10**
 
 将：
 
@@ -133,7 +133,7 @@ Expected: 两处都有命中。
 10. **调用点单线路与目标级扇出。** 调用点选择用多信号打分只选一个，并列按源码顺序取第一个并记录 `tie_break`；被选中调用点的目标动态不唯一时（函数指针、回调、`dlsym` 符号、多个 virtual override），把 vendor + system 域内全部静态可枚举目标作为下一跳分支继续追踪，不得判并列歧义、不得只选一个；最终接口必须是 vendor 类成员函数，且类定义与函数定义都在 vendor；vendor free function、system 函数、非 vendor 类成员只是中间层。
 ```
 
-- [ ] **Step 4: 替换原则 9**
+- [x] **Step 4: 替换原则 9**
 
 将：
 
@@ -147,7 +147,7 @@ Expected: 两处都有命中。
 9. **impl 定位顺序。** S1 特征匹配 → S2 命名启发式 → S3 绑定点与注册流程；S1/S2/S3 在 vendor + system 两域统一搜索，S3 绝不在 stub 域搜索；初始 impl 在 system 时，按 stub 接口函数做调用点单线路选择与目标级扇出追踪。
 ```
 
-- [ ] **Step 5: 验证第一章**
+- [x] **Step 5: 验证第一章**
 
 Run:
 
@@ -166,7 +166,7 @@ Expected: 3 个 `present`。
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第六章）
 
-- [ ] **Step 1: 确认第六章边界**
+- [x] **Step 1: 确认第六章边界**
 
 Run:
 
@@ -177,7 +177,7 @@ grep -n '^### 6.4\|^### 6.5\|^### 6.6\|^### 6.7' HDF-api-finder/SKILL.md
 
 Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 
-- [ ] **Step 2: 更新第六章引言与 6.4 第 4、5 步**
+- [x] **Step 2: 更新第六章引言与 6.4 第 4、5 步**
 
 将：
 
@@ -205,7 +205,7 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 5. 其他情况 → 进入 6.5 目标级扇出追踪。
 ```
 
-- [ ] **Step 3: 用增量设计 §4 重写 6.5**
+- [x] **Step 3: 用增量设计 §4 重写 6.5**
 
 将 `### 6.5 单线路追踪` 到 `### 6.6 02_impl.json` 之前的内容整体替换为：
 
@@ -248,7 +248,7 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 - `tie_break` 与 `target_evidence` 只用于中间证据，不进入最终 JSON。
 ````
 
-- [ ] **Step 4: 重写 6.6 02_impl.json**
+- [x] **Step 4: 重写 6.6 02_impl.json**
 
 将 `### 6.6 02_impl.json` 到 `### 6.7 入口状态与失败处理` 之前的内容整体替换为：
 
@@ -358,7 +358,7 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 - 写入失败 → 写 `error.json`（`phase=resolve_impl`，`code=snapshot_write_failed`），停止。
 ````
 
-- [ ] **Step 5: 更新 6.7 入口状态与失败处理**
+- [x] **Step 5: 更新 6.7 入口状态与失败处理**
 
 将：
 
@@ -375,7 +375,7 @@ Expected: 得到第六章、第七章起始行与 6.4–6.7 小节行号。
 - 单入口全部映射失败 → entry unresolved，继续其他入口。
 ```
 
-- [ ] **Step 6: 验证第六章**
+- [x] **Step 6: 验证第六章**
 
 Run:
 
@@ -415,7 +415,7 @@ Expected: 无 `missing ...`；`phase2_schema_ok`；`old_term_in_phase2=absent`�
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第七章）
 
-- [ ] **Step 1: 确认第七章边界**
+- [x] **Step 1: 确认第七章边界**
 
 Run:
 
@@ -426,7 +426,7 @@ grep -n '^### 7.2\|^### 7.5\|^### 7.6' HDF-api-finder/SKILL.md
 
 Expected: 得到第七章、第八章起始行与 7.2/7.5/7.6 小节行号。
 
-- [ ] **Step 2: 替换 7.2 查表规则**
+- [x] **Step 2: 替换 7.2 查表规则**
 
 将：
 
@@ -448,7 +448,7 @@ Expected: 得到第七章、第八章起始行与 7.2/7.5/7.6 小节行号。
 7. 阶段三不解析 impl 方法定义，不读取 system 调用链，也不做 impl 域判定。
 ```
 
-- [ ] **Step 3: 替换 7.5 03_cases.json 示例**
+- [x] **Step 3: 替换 7.5 03_cases.json 示例**
 
 将 7.5 小节中的示例 JSON 整体替换为：
 
@@ -515,7 +515,7 @@ Expected: 得到第七章、第八章起始行与 7.2/7.5/7.6 小节行号。
 ```
 ````
 
-- [ ] **Step 4: 更新 7.6 unresolved 表**
+- [x] **Step 4: 更新 7.6 unresolved 表**
 
 将：
 
@@ -533,7 +533,7 @@ Expected: 得到第七章、第八章起始行与 7.2/7.5/7.6 小节行号。
 | `trace_no_candidate` | 映射/分支 | 当前函数没有可信的调用点候选 |
 ```
 
-- [ ] **Step 5: 验证第七章**
+- [x] **Step 5: 验证第七章**
 
 Run:
 
@@ -573,7 +573,7 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第八章）
 
-- [ ] **Step 1: 更新 8.1 第 2 条**
+- [x] **Step 1: 更新 8.1 第 2 条**
 
 将：
 
@@ -587,7 +587,7 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 2. 一个 case 对应一个 `(stub 函数, 最终 impl 函数)` 对；同一 cmdId 命中多个 impl 函数时输出多条 case；目标级扇出的并列结果按此规则并列输出。
 ```
 
-- [ ] **Step 2: 8.2 自检追加第 11–15 项**
+- [x] **Step 2: 8.2 自检追加第 11–15 项**
 
 将：
 
@@ -608,7 +608,7 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 第 11–15 项为写盘前检查，必须在第 9–10 项写盘之前执行。
 ```
 
-- [ ] **Step 3: 更新自检失败范围**
+- [x] **Step 3: 更新自检失败范围**
 
 将：
 
@@ -622,7 +622,7 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 - 自检第 1–8 项或第 11–15 项失败 → `error.json`（`phase=output`，`code=self_check_failed`），停止，不写最终 JSON。
 ```
 
-- [ ] **Step 4: 同步第二章与第八章完成报告**
+- [x] **Step 4: 同步第二章与第八章完成报告**
 
 将：
 
@@ -656,7 +656,7 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 - unresolved 数量；
 ```
 
-- [ ] **Step 5: 验证第八章**
+- [x] **Step 5: 验证第八章**
 
 Run:
 
@@ -676,7 +676,7 @@ print("json_valid=ok")
 PY
 ```
 
-Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计数均为 2；`json_valid=ok`。
+Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计数均为 3（第二章、第八章与示例一）；`json_valid=ok`。
 
 ---
 
@@ -685,7 +685,7 @@ Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计�
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第十章）
 
-- [ ] **Step 1: 替换约束 7**
+- [x] **Step 1: 替换约束 7**
 
 将：
 
@@ -699,7 +699,7 @@ Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计�
 7. impl 定位顺序：S1/S2/S3 在 vendor + system 统一搜索；S3 绝不在 stub 域搜索；调用点选择保持单线路，打分并列按源码顺序取第一个并记录 `tie_break`；目标动态不唯一时全部分支追踪。
 ```
 
-- [ ] **Step 2: 追加约束 16**
+- [x] **Step 2: 追加约束 16**
 
 将：
 
@@ -714,7 +714,7 @@ Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计�
 16. 目标级扇出：函数指针、回调、`dlsym` 符号、多个 virtual override 等动态目标必须在 vendor + system 域内枚举全部候选；每分支独立 visited；分支失败隔离；不设扇出/深度上限。
 ```
 
-- [ ] **Step 3: 更新术语表**
+- [x] **Step 3: 更新术语表**
 
 将：
 
@@ -731,7 +731,7 @@ Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计�
 | tie_break | 调用点打分并列时按源码顺序取第一个的记录 |
 ```
 
-- [ ] **Step 4: 更新部分失败规则**
+- [x] **Step 4: 更新部分失败规则**
 
 将：
 
@@ -748,7 +748,7 @@ Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计�
 - 单个入口全部映射失败：入口 unresolved，继续其他入口。
 ```
 
-- [ ] **Step 5: 更新 self_check_failed 错误码范围**
+- [x] **Step 5: 更新 self_check_failed 错误码范围**
 
 将：
 
@@ -762,7 +762,7 @@ Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计�
 | `self_check_failed` | 自检第 1–8 项或第 11–15 项失败 | 写 error.json（phase=output），结束 |
 ```
 
-- [ ] **Step 6: 验证第十章**
+- [x] **Step 6: 验证第十章**
 
 Run:
 
@@ -783,7 +783,7 @@ Expected: 无 `missing ...`（含 `missing self_check row`）；`old_term_in_cha
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第十一章）
 
-- [ ] **Step 1: 替换旧行**
+- [x] **Step 1: 替换旧行**
 
 将：
 
@@ -809,7 +809,7 @@ Expected: 无 `missing ...`（含 `missing self_check row`）；`old_term_in_cha
 | “虚函数按静态类型继续” | 收集 vendor + system 域内全部 override，作为目标级扇出分支。 |
 ```
 
-- [ ] **Step 2: 追加新行**
+- [x] **Step 2: 追加新行**
 
 在抗理性化表末尾（`| “阶段三再解析 impl 方法” | ... |` 之后）追加：
 
@@ -823,7 +823,7 @@ Expected: 无 `missing ...`（含 `missing self_check row`）；`old_term_in_cha
 | “回调注册要展开注册函数内部” | 只认直接赋值点；不展开跨函数指针写入。 |
 ```
 
-- [ ] **Step 3: 验证第十一章**
+- [x] **Step 3: 验证第十一章**
 
 Run:
 
@@ -842,7 +842,7 @@ Expected: 无 `missing ...`。
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第十二章）
 
-- [ ] **Step 1: 更新示例一第 3 步**
+- [x] **Step 1: 更新示例一第 3 步**
 
 将：
 
@@ -856,7 +856,7 @@ Expected: 无 `missing ...`。
 3. 阶段二：S1 在 system 域定位初始 impl `DemoSystemService`；对 `GetVersion` 等 stub 接口函数先做调用点单线路选择，再对动态目标做目标级扇出追踪，最终落到 vendor 的 `DemoService::GetVersion`；写 `02_impl.json`（含 `initial_impl_*`、`final_impl_functions`、`unresolved_branches`、`impl_classes`）。
 ```
 
-- [ ] **Step 2: 更新示例二**
+- [x] **Step 2: 更新示例二**
 
 将：
 
@@ -870,7 +870,7 @@ Expected: 无 `missing ...`。
 初始 impl 在 vendor 且方法定义也在该初始 impl 类中时，不产生额外中间层；`final_impl_functions` 只有一个元素，其 `trace = []`、`target_evidence = []`，`initial_impl_class` 与该元素的 `impl_class` 相同。若方法定义在 vendor 基类，则 `impl_class` 为该 vendor 基类。输出 JSON 的 `impl_classes` 只包含最终 vendor 类。
 ```
 
-- [ ] **Step 3: 追加示例四、示例五**
+- [x] **Step 3: 追加示例四、示例五**
 
 在示例三末尾之后追加：
 
@@ -903,7 +903,7 @@ Expected: 无 `missing ...`。
 追踪继续，不中止、不判并列歧义。
 ````
 
-- [ ] **Step 4: 验证第十二章**
+- [x] **Step 4: 验证第十二章**
 
 Run:
 
@@ -923,7 +923,7 @@ Expected: 无 `missing ...`；`trace_ambiguous=absent`。
 **Files:**
 - Verify: `HDF-api-finder/SKILL.md`
 
-- [ ] **Step 1: 章节数量与顺序**
+- [x] **Step 1: 章节数量与顺序**
 
 Run:
 
@@ -934,7 +934,7 @@ grep -nE '^## (一|二|三|四|五|六|七|八|九|十|十一|十二)、' HDF-ap
 
 Expected: 第一行 `12`；第二个命令输出 12 行，顺序为一至十二。
 
-- [ ] **Step 2: frontmatter 与编码**
+- [x] **Step 2: frontmatter 与编码**
 
 Run:
 
@@ -945,7 +945,7 @@ file HDF-api-finder/SKILL.md
 
 Expected: 前 3 行为 `---`、`name: HDF-api-finder`、`description: ...`；UTF-8 Unicode text。
 
-- [ ] **Step 3: 全部 JSON 可解析并检查新 schema**
+- [x] **Step 3: 全部 JSON 可解析并检查新 schema**
 
 Run:
 
@@ -992,7 +992,7 @@ PY
 
 Expected: `json_blocks>=8`、`final_entries>=2`、`impl_records>=1`、`case_items>=2`、`json_schema_ok`。
 
-- [ ] **Step 4: 禁用字符串、旧术语与占位符**
+- [x] **Step 4: 禁用字符串、旧术语与占位符**
 
 Run:
 
@@ -1006,7 +1006,7 @@ grep -nE 'final_impl_function["`]|final_impl_file["`]|final_impl_class["`]|final
 
 Expected: `forbidden_strings=none`、`placeholders=none`、`trace_ambiguous=absent`、`old_term=absent`、`old_fields=absent`。
 
-- [ ] **Step 5: 新字段/新 unresolved/错误码覆盖**
+- [x] **Step 5: 新字段/新 unresolved/错误码覆盖**
 
 Run:
 
@@ -1021,7 +1021,7 @@ done
 
 Expected: 无任何输出。
 
-- [ ] **Step 6: 记录大小**
+- [x] **Step 6: 记录大小**
 
 Run:
 
@@ -1039,7 +1039,7 @@ Expected: 记录行数与字节数，供完成报告使用。
 **Files:**
 - Verify: `HDF-api-finder/SKILL.md`
 
-- [ ] **Step 1: 阶段边界**
+- [x] **Step 1: 阶段边界**
 
 Run:
 
@@ -1052,7 +1052,7 @@ grep -q '阶段三不解析 impl 方法定义' HDF-api-finder/SKILL.md && echo "
 
 Expected: 五→六→七→八顺序；3 个 `present`。
 
-- [ ] **Step 2: 单线路与扇出规则**
+- [x] **Step 2: 单线路与扇出规则**
 
 Run:
 
@@ -1065,7 +1065,7 @@ grep -q '不设深度上限，不设扇出上限' HDF-api-finder/SKILL.md && ech
 
 Expected: 4 个 `present`。
 
-- [ ] **Step 3: 目标枚举与分支隔离**
+- [x] **Step 3: 目标枚举与分支隔离**
 
 Run:
 
@@ -1079,7 +1079,7 @@ grep -q 'unresolved_branches' HDF-api-finder/SKILL.md && echo "branch_failure=pr
 
 Expected: 5 个 `present`。
 
-- [ ] **Step 4: 输出与状态流**
+- [x] **Step 4: 输出与状态流**
 
 Run:
 
@@ -1093,7 +1093,7 @@ grep -q 'unresolved 不进入最终 JSON' HDF-api-finder/SKILL.md && echo "unres
 
 Expected: 5 个 `present`。
 
-- [ ] **Step 5: 发现缺口时修复并重跑**
+- [x] **Step 5: 发现缺口时修复并重跑**
 
 任一检查输出 `missing` 或缺少 `present` → 回到对应任务补充，再重跑 Task 9 与 Task 10，直到全部通过。
 
@@ -1104,7 +1104,7 @@ Expected: 5 个 `present`。
 **Files:**
 - Verify: `HDF-api-finder/SKILL.md`
 
-- [ ] **Step 1: 分段通读全文**
+- [x] **Step 1: 分段通读全文**
 
 Run:
 
@@ -1122,7 +1122,7 @@ Expected: 记录行数。分 3 段 Read 全文（每段不超过 300 行），�
 - 示例全部使用中性 demo 命名；
 - 无 `trace_ambiguous`、无旧术语 `单线路追踪`、无代码图工具名称、无参考 skill 名称。
 
-- [ ] **Step 2: 最终结构复检**
+- [x] **Step 2: 最终结构复检**
 
 Run:
 
@@ -1144,7 +1144,7 @@ grep -n '单线路追踪' HDF-api-finder/SKILL.md || echo "old_term=absent"
 
 Expected: `12`、`json_valid=ok`、`forbidden_strings=none`、`trace_ambiguous=absent`、`old_term=absent`。
 
-- [ ] **Step 3: 交付报告**
+- [x] **Step 3: 交付报告**
 
 报告：
 
@@ -1162,7 +1162,7 @@ Expected: `12`、`json_valid=ok`、`forbidden_strings=none`、`trace_ambiguous=a
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`
 
-- [ ] **Step 1: 检查 diff**
+- [x] **Step 1: 检查 diff**
 
 Run:
 
@@ -1173,7 +1173,7 @@ git diff --stat
 
 Expected: 仅 `HDF-api-finder/SKILL.md` 有未提交修改（设计与计划已提交）。
 
-- [ ] **Step 2: 提交 SKILL.md**
+- [x] **Step 2: 提交 SKILL.md**
 
 Run:
 
@@ -1194,7 +1194,7 @@ EOF
 
 Expected: 提交成功，仅包含 `HDF-api-finder/SKILL.md`。
 
-- [ ] **Step 3: 验证提交**
+- [x] **Step 3: 验证提交**
 
 Run:
 
@@ -1205,7 +1205,7 @@ git status --short
 
 Expected: 作者为 `siakam43 <429872468@qq.com>`；工作区干净（除未跟踪文件外）。
 
-- [ ] **Step 4: 不推送**
+- [x] **Step 4: 不推送**
 
 Run:
 
