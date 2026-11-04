@@ -617,10 +617,10 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 替换为：
 
 ```text
-- 自检第 1–15 项失败 → `error.json`（`phase=output`，`code=self_check_failed`），停止，不写最终 JSON。
+- 自检第 1–8 项或第 11–15 项失败 → `error.json`（`phase=output`，`code=self_check_failed`），停止，不写最终 JSON。
 ```
 
-- [ ] **Step 4: 8.3 完成报告追加统计**
+- [ ] **Step 4: 同步第二章与第八章完成报告**
 
 将：
 
@@ -638,14 +638,33 @@ Expected: `target_not_enumerable=present`、`trace_ambiguous_in_phase3=absent`�
 - unresolved 数量；
 ```
 
+将：
+
+```text
+- 已解析映射数（最终 JSON 的 case 总数）；
+- unresolved 数量；
+```
+
+替换为：
+
+```text
+- 已解析映射数（最终 JSON 的 case 总数）；
+- 动态扇出分支数：成功到达最终接口的分支数（去重前）/ 记录在 `unresolved_branches` 的失败分支数；
+- 最终接口数：`02_impl.json` 中 `final_impl_functions` 元素总数（去重后）；
+- unresolved 数量；
+```
+
 - [ ] **Step 5: 验证第八章**
 
 Run:
 
 ```bash
-for t in '目标级扇出的并列结果' '自检第 1–15 项失败' '动态扇出分支数' '最终接口数'; do
+for t in '目标级扇出的并列结果' '动态扇出分支数' '最终接口数'; do
   grep -q "$t" HDF-api-finder/SKILL.md || echo "missing $t"
 done
+grep -q '自检第 1–8 项或第 11–15 项失败' HDF-api-finder/SKILL.md || echo "missing 自检范围"
+grep -c '动态扇出分支数' HDF-api-finder/SKILL.md
+grep -c '最终接口数' HDF-api-finder/SKILL.md
 python3 - <<'PY'
 import re, json
 text = open('HDF-api-finder/SKILL.md', encoding='utf-8').read()
@@ -655,7 +674,7 @@ print("json_valid=ok")
 PY
 ```
 
-Expected: 无 `missing ...`；`json_valid=ok`。
+Expected: 无 `missing ...`；`动态扇出分支数` 与 `最终接口数` 计数均为 2；`json_valid=ok`。
 
 ---
 
@@ -727,7 +746,21 @@ Expected: 无 `missing ...`；`json_valid=ok`。
 - 单个入口全部映射失败：入口 unresolved，继续其他入口。
 ```
 
-- [ ] **Step 5: 验证第十章**
+- [ ] **Step 5: 更新 self_check_failed 错误码范围**
+
+将：
+
+```text
+| `self_check_failed` | 自检第 1–8 项失败 | 写 error.json（phase=output），结束 |
+```
+
+替换为：
+
+```text
+| `self_check_failed` | 自检第 1–8 项或第 11–15 项失败 | 写 error.json（phase=output），结束 |
+```
+
+- [ ] **Step 6: 验证第十章**
 
 Run:
 
@@ -736,6 +769,7 @@ for t in '调用点选择' '目标级扇出' '追踪分支' 'tie_break' '目标�
   grep -q "$t" HDF-api-finder/SKILL.md || echo "missing $t"
 done
 awk '/^## 十、/{f=1} /^## 十一、/{f=0} f' HDF-api-finder/SKILL.md | grep -q '单线路追踪' && echo "old_term_in_chapter10=present" || echo "old_term_in_chapter10=absent"
+grep -q '自检第 1–8 项或第 11–15 项失败' HDF-api-finder/SKILL.md || echo "missing self_check range"
 ```
 
 Expected: 无 `missing ...`；`old_term_in_chapter10=absent`。
