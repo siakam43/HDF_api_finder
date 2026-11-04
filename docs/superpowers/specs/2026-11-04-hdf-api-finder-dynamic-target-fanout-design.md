@@ -196,7 +196,7 @@ data/reply 派生值只做轻量识别：直接参数、简单别名、`&`/`*`�
 - `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 在 `pattern` 记录精确符号名。
 - `target_evidence.lookup` 用于赋值点匹配得到的目标（`direct_assign` / `dlsym_exact` / `dlsym_glob`），取值 `full_expression` / `member_name`；`virtual_override` / `base_implementation` 记录声明或定义位置与表达式。
 - `tie_break` 为可选字段，仅出现在发生并列选择的 trace 条目；`candidates` 记录参与并列的调用与分数，`chosen` 记录选中项，`reason` 固定为 `source_order`。
-- `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，保留排序后第一条分支的 trace。
+- `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，`tried` 合并去重，保留排序后第一条分支的 trace。
 - `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null：进入 6.5 的映射取排序后第一条失败分支的原因，若没有任何失败分支记录则记 `final_impl_not_found`；6.2/6.4 已设置的 `unresolved_reason` 保持不变。
 - 元素按 `(函数, 文件, 行)` 去重，`target_evidence` 合并去重。
 - 入口级 `impl_classes` 语义不变：全部最终 vendor 类按 `(impl_class, impl_file)` 去重排序。
@@ -271,7 +271,7 @@ data/reply 派生值只做轻量识别：直接参数、简单别名、`&`/`*`�
 | 变更 | kind | 级别 | 含义 |
 |------|------|------|------|
 | 移除 | `trace_ambiguous` | 映射 | 调用点并列改为源码顺序取第一个，不再产生此类型 |
-| 新增 | `target_not_enumerable` | 映射/分支 | 选中调用点的动态目标无法静态枚举：无赋值点、`dlsym` 表达式完全由运行时段构成、符号模式无字面量段等 |
+| 新增 | `target_not_enumerable` | 映射/分支 | 选中调用点的动态目标无法静态枚举：无赋值点、`dlsym` 表达式完全由运行时段构成且不可枚举、符号模式无字面量段等 |
 | 保留 | `impl_overload_ambiguous` | 映射 | 仅指重载无法按实参唯一确定；扇出不覆盖重载歧义 |
 
 其余 kind（`impl_not_found`、`impl_ambiguous`、`dispatch_form_unsupported`、`stub_interface_not_found`、`stub_interface_scope`、`impl_call_not_found`、`impl_method_not_found`、`trace_no_candidate`、`final_impl_not_found`、`cmd_value`、`definition_not_found`、`cycle`）不变。
