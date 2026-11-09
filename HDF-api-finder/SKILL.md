@@ -11,14 +11,14 @@ description: 当用户调用 /HDF-api-finder <project_dir> <conf>，或要求在
 
 1. **分析质量优先。** 宁可慢，不可草率。不设深度上限、不设扇出上限；所有静态可确定的 cmdId 用例全部追踪，环检测是唯一的循环保护。不得因任务长而跳读、合并或提前退出。
 2. **scope 是硬边界。** 所有搜索只使用 `<out>/scope_files.txt` 或分类清单；禁止 `grep -rn <project_dir>`、`rg <project_dir>`、`find <project_dir> -exec grep` 等全仓搜索。
-3. **域边界。** 入口只在 stub 域搜索；初始 impl 类可在 vendor 或 system；最终 impl 类与最终接口函数必须在 vendor 域；system 域函数只作辅助追踪/中间层，不能作为最终接口输出。
+3. **域边界。** 入口只在 stub 域搜索；初始 impl 类可在 vendor 或 system；最终接口函数必须定义在 vendor 域，若为类成员函数则其类定义也必须在 vendor 域；system 域函数只作辅助追踪/中间层，不能作为最终接口输出。
 4. **只分析实际调用的 stub 函数。** 只分析 OnRemoteRequest 中直接调用的 stub 成员函数，不扫描 stub 类的其他成员函数。
 5. **证据优先，不臆造。** 每个入口、每个 cmdId 值、每个 stub/impl 对应关系都要有代码证据；调用点打分并列必须记录 `tie_break`（候选、分数、选中项、原因 `source_order`），目标级扇出必须记录 `target_evidence`；无法确定的分析项写入 unresolved，记录 `detail` 与 `tried`，不得猜测。
 6. **全部由主 agent 完成。** 不调用 sub-agent，不把分析拆给子代理。
 7. **每次从零分析。** 先备份旧输出，再从零分析；不做自动恢复，不复用历史结果。
 8. **函数名带作用域。** C++ 函数名使用定义处作用域限定名；重载以 `(文件, 定义行)` 区分，限定名相同不得合并。
 9. **impl 定位顺序。** S1 特征匹配 → S2 命名启发式 → S3 绑定点与注册流程；S1/S2/S3 在 vendor + system 两域统一搜索，S3 绝不在 stub 域搜索；初始 impl 在 system 时，按 stub 接口函数做调用点单线路选择与目标级扇出追踪。
-10. **调用点单线路与目标级扇出。** 调用点选择用多信号打分只选一个，并列按源码顺序取第一个并记录 `tie_break`；被选中调用点的目标动态不唯一时（函数指针、回调、`dlsym` 符号、多个 virtual override），把 vendor + system 域内全部静态可枚举目标作为下一跳分支继续追踪，不得判并列歧义、不得只选一个；最终接口必须是 vendor 类成员函数，且类定义与函数定义都在 vendor；vendor free function、system 函数、非 vendor 类成员只是中间层。
+10. **调用点单线路与目标级扇出。** 调用点选择用多信号打分只选一个，并列按源码顺序取第一个并记录 `tie_break`；被选中调用点的目标动态不唯一时（函数指针、回调、`dlsym` 符号、多个 virtual override），把 vendor + system 域内全部静态可枚举目标作为下一跳分支继续追踪，不得判并列歧义、不得只选一个；最终接口必须是 vendor 类成员函数（类定义与函数定义都在 vendor 域）或 vendor 自由函数（函数定义在 vendor 域）；system 函数、非 vendor 类成员只是中间层。
 11. **中文与独立性。** 全中文提示词，同一概念用词前后一致；正文不得出现任何代码图/MCP 代码探索工具，不体现与其他 skill 的关联性。
 
 ## 二、使用方法与输出
@@ -103,7 +103,7 @@ description: 当用户调用 /HDF-api-finder <project_dir> <conf>，或要求在
 - scope 各域文件数与总数；
 - service_name；
 - 入口来源（conf/discovered）与入口数量；
-- stub 类数量、初始 impl 类数量、最终 impl 类数量；
+- stub 类数量、初始 impl 类数量、最终 impl 类数量（仅类成员最终接口）、最终自由函数接口数；
 - cmdId 用例数（预规划用例数，不含 default）；
 - 已解析映射数（最终 JSON 的 case 总数）；
 - 动态扇出分支数：成功到达最终接口的分支数（去重前）/ 记录在 `unresolved_branches` 的失败分支数；
@@ -173,7 +173,7 @@ description: 当用户调用 /HDF-api-finder <project_dir> <conf>，或要求在
 
 - 文件路径以某个域根路径为前缀，或等于该域清单中的文件条目 → 属于该域。
 - 允许一个文件同时属于多个域；判定时按具体规则取所需域。
-- stub 接口函数必须定义在 stub 域；初始 impl 类可在 vendor 或 system；最终 impl 类与最终接口函数必须定义在 vendor 域；system 域函数只作为辅助追踪/中间层，不能作为最终接口输出。
+- stub 接口函数必须定义在 stub 域；初始 impl 类可在 vendor 或 system；最终接口函数必须定义在 vendor 域，若为类成员函数则其类定义也必须在 vendor 域；system 域函数只作为辅助追踪/中间层，不能作为最终接口输出。
 
 ### 搜索方法与纪律
 
@@ -405,8 +405,8 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 6. 对选中调用点的目标集合逐目标建立分支：
    - 目标集合大小 1 → 单分支；大于 1 → 目标级扇出，每个目标创建独立分支，继承当前分支 trace 与 visited 副本；可递归扇出。
    - 目标按 `(定义文件, 定义行)` 升序处理；分支按目标解析的深度优先遍历顺序排序，用于去重与失败原因取首。
-   - 最终接口：vendor 类成员函数，且类定义与函数定义都在 vendor → 记录到 `final_impl_functions`（含该分支 trace 与 `target_evidence`），分支结束。
-   - 中间层：system 函数、vendor free function、所属类不在 vendor、vendor 类但函数/类定义不在 vendor → trace 追加该目标与调用证据，继续步骤 1。
+   - 最终接口（任一满足）：vendor 类成员函数且类定义与函数定义都在 vendor；vendor 自由函数且函数定义在 vendor → 记录到 `final_impl_functions`（含该分支 trace 与 `target_evidence`），分支结束。
+   - 中间层：system 函数、所属类不在 vendor、vendor 类但函数/类定义不在 vendor → trace 追加该目标与调用证据，继续步骤 1。
 7. visited 每分支独立，键 `(文件, 函数签名行)`，只含当前分支祖先；同一分支重复 → `cycle`。分支间不共享 visited，DAG 收敛不视为环。
 8. 分支终止原因：`definition_not_found`、`target_not_enumerable`、`trace_no_candidate`、`cycle`；失败分支记入 `unresolved_branches`，其他分支继续。`final_impl_not_found` 是映射级汇总原因，不作为分支终止原因。
 9. 不设深度上限，不设扇出上限。
@@ -414,8 +414,8 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 
 补充：
 
-- vendor free function 只是中间 helper，不算最终接口。
-- 最终 impl 类定义与最终接口函数定义都必须在 vendor。
+- vendor 自由函数与 vendor 类成员函数同等作为最终接口，到达即终止该分支。
+- 最终接口函数定义必须在 vendor；若为类成员函数，其类定义也必须在 vendor。
 - 目标枚举只在 vendor + system 域进行，stub 域不参与。
 - `tie_break` 与 `target_evidence` 只用于中间证据，不进入最终 JSON。
 
@@ -512,6 +512,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 字段与规则：
 
 - `final_impl_functions` 每个元素对应一条最终接口（追踪分支或 6.4 直通映射）；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
+- 最终自由函数接口的 `impl_class` 与 `impl_class_file` 为 `null`；其余字段与类成员最终接口一致。
 - `target_evidence` 汇总该分支上每次目标级选择产生的证据；直接单目标且无动态选择时可为空数组。
 - `target_evidence.match` 取值：`direct_assign` / `dlsym_exact` / `dlsym_glob` / `virtual_override` / `base_implementation`。
 - `dlsym_glob` 目标必须记录 `pattern`；`dlsym_exact` 在 `pattern` 记录精确符号名。
@@ -520,7 +521,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 - `unresolved_branches` 记录失败分支：`kind` / `detail` / `tried` / 分支 `trace`；按 `(kind, detail)` 去重，`tried` 合并去重，保留排序后第一条分支的 trace。
 - `status = "resolved"` 当且仅当 `final_impl_functions` 非空；`unresolved_reason` 仅在 unresolved 时非 null：进入 6.5 的映射取排序后第一条失败分支的原因，若没有任何失败分支记录则记 `final_impl_not_found`；6.2/6.4 已设置的 `unresolved_reason` 保持不变。
 - 元素按 `(函数, 文件, 行)` 去重，`target_evidence` 合并去重。
-- 入口级 `impl_classes` 语义不变：全部最终 vendor 类按 `(impl_class, impl_file)` 去重排序。
+- 入口级 `impl_classes` 只收录类成员最终接口所属的 vendor 类，按 `(impl_class, impl_file)` 去重排序；允许为空（全部最终接口均为自由函数时）；最终自由函数接口不产生类条目。
 - 写入失败 → 写 `error.json`（`phase=resolve_impl`，`code=snapshot_write_failed`），停止。
 
 ### 6.7 入口状态与失败处理
@@ -658,6 +659,8 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 }
 ```
 
+- 最终自由函数接口的 `impl_class` 与 `impl_class_file` 为 `null`；`evidence_chain` 末尾使用其命名空间限定名。
+
 ### 7.6 unresolved 类型
 
 | kind | 级别 | 含义 |
@@ -672,7 +675,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 | `impl_overload_ambiguous` | 映射 | 方法或下一跳调用重载无法按实参唯一确定 |
 | `target_not_enumerable` | 映射/分支 | 选中调用点的动态目标无法静态枚举：无赋值点、`dlsym` 表达式完全由运行时段构成且不可枚举、符号模式无字面量段等 |
 | `trace_no_candidate` | 映射/分支 | 当前函数没有可信的调用点候选 |
-| `final_impl_not_found` | 映射 | 追踪耗尽仍没有 vendor 类成员函数作为最终接口 |
+| `final_impl_not_found` | 映射 | 追踪耗尽仍没有 vendor 域最终接口函数（类成员函数或自由函数） |
 | `cmd_value` | 用例 | cmdId 值或宏表达式无法解析 |
 | `definition_not_found` | 映射/用例 | 函数定义不在 scope 内或无法唯一确定 |
 | `cycle` | 映射/用例 | 追踪路径形成真环 |
@@ -724,7 +727,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 2. 一个 case 对应一个 `(stub 函数, 最终 impl 函数)` 对；同一 cmdId 命中多个 impl 函数时输出多条 case；目标级扇出的并列结果按此规则并列输出。
 3. 入口字段：`on_remote_request` / `on_remote_request_file` / `on_remote_request_line` / `stub_class` / `impl_classes` / `cases`；case 字段：`cmd_id_macro` / `cmd_id_value` / `stub_interface_function` / `stub_interface_file` / `impl_interface_function` / `impl_interface_file`。不添加额外字段。
 4. 没有可解析用例的入口不进入最终 JSON；全部入口都没有可解析用例时写 `"entries": []`。
-5. `impl_classes` 只收录最终 vendor 类，按 `(impl_class, impl_file)` 去重，按 `impl_class` → `impl_file` 排序。
+5. `impl_classes` 只收录类成员最终接口所属的最终 vendor 类，按 `(impl_class, impl_file)` 去重，按 `impl_class` → `impl_file` 排序；允许为空（全部最终接口均为自由函数时）。
 6. 同一入口内 case 按六元组去重：`(cmd_id_macro, cmd_id_value, stub_interface_function, stub_interface_file, impl_interface_function, impl_interface_file)`。
 7. 排序：入口按 `on_remote_request_file` → `on_remote_request_line`；case 按 `cmd_id_value` 升序（null 最后）→ `cmd_id_macro` → `stub_interface_function` → `impl_interface_function`。
 8. default、unresolved 不输出。
@@ -736,15 +739,15 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 1. `01_entry.json` 中的全部入口都已处理。
 2. `03_cases.json` 中不存在 `pending`。
 3. 每个最终入口至少有一条 case。
-4. 每个有 case 的入口 `impl_classes` 非空；每个 case 的最终 impl 函数所属类在 `impl_classes` 中。
-5. 每条最终 case 的 stub 接口函数定义在 stub 域且文件在 `scope_stub_files.txt` 内；impl 接口函数定义在 vendor 域、文件在 `scope_vendor_files.txt` 内，且所属类也在 vendor 域。
+4. 每个 case 的最终接口若为类成员函数，其 `(impl_class, impl_file)` 必须在 `impl_classes` 中；全部最终接口均为自由函数时 `impl_classes` 允许为空，入口仍必须保留。
+5. 每条最终 case 的 stub 接口函数定义在 stub 域且文件在 `scope_stub_files.txt` 内；impl 接口函数定义在 vendor 域、文件在 `scope_vendor_files.txt` 内；若 impl 接口函数为类成员函数，所属类也在 vendor 域。
 6. 所有 stub/impl 函数都是完整定义，函数名为定义处作用域限定名；重载以 `(文件, 定义行)` 区分。
 7. default 没有混入最终 JSON；unresolved 没有混入最终 JSON。
 8. 最终 JSON 字段集合与 8.1 完全一致；已按六元组去重并排序；`impl_classes` 无重复、已排序。
 9. 写临时文件后 Read 回读，核对数组长度、字段名、类型；截断视为失败。
 10. mv 后双方法确认最终文件存在（ls + Read）。
 11. 每条 `status = "resolved"` 的映射记录至少一个 `final_impl_functions` 元素。
-12. 每个最终接口函数定义在 vendor、文件在 `scope_vendor_files.txt` 内，所属类也在 vendor。
+12. 每个最终接口函数定义在 vendor、文件在 `scope_vendor_files.txt` 内；若为类成员函数，所属类也在 vendor。
 13. `final_impl_functions` 已按 `(函数, 文件, 行)` 去重；`target_evidence` 已合并去重。
 14. 每个 `status = "done"` 的用例至少一个 `impl_interfaces` 元素，每个元素 `evidence_chain` 非空。
 15. 部分失败分支只出现在 unresolved 记录中，不得混入最终 JSON。
@@ -761,7 +764,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 - scope 各域文件数与总数；
 - service_name；
 - 入口来源与数量；
-- stub 类数量、初始 impl 类数量、最终 impl 类数量；
+- stub 类数量、初始 impl 类数量、最终 impl 类数量（仅类成员最终接口）、最终自由函数接口数；
 - cmdId 用例数（预规划、不含 default）；
 - 已解析映射数（最终 JSON case 总数）；
 - 动态扇出分支数：成功到达最终接口的分支数（去重前）/ 记录在 `unresolved_branches` 的失败分支数；
@@ -788,8 +791,8 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 1. 全部由主 agent 完成，不调用 sub-agent。
 2. 质量优先；不设深度/扇出上限；所有静态可确定的用例全部追踪；环检测是唯一循环保护。
 3. scope 是硬边界；所有搜索只用 scope 清单；禁止全仓搜索。
-4. 入口只在 stub 域搜索；未指定 entry 时分析全部合法入口；指定 entry 时只分析该入口；初始 impl 可在 vendor/system，最终 impl 必须在 vendor。
-5. stub 接口函数必须在 stub 域；初始 impl 可在 vendor/system；最终 impl 类与最终接口函数必须在 vendor 域；system 域函数只作辅助追踪/中间层。
+4. 入口只在 stub 域搜索；未指定 entry 时分析全部合法入口；指定 entry 时只分析该入口；初始 impl 可在 vendor/system，最终接口必须在 vendor（类成员函数还要求类定义在 vendor）。
+5. stub 接口函数必须在 stub 域；初始 impl 可在 vendor/system；最终接口函数必须定义在 vendor 域（类成员函数还要求类定义在 vendor）；system 域函数只作辅助追踪/中间层。
 6. 只分析 OnRemoteRequest 中实际调用的 stub 成员函数，不扫描 stub 类其他成员。
 7. impl 定位顺序：S1/S2/S3 在 vendor + system 统一搜索；S3 绝不在 stub 域搜索；调用点选择保持单线路，打分并列按源码顺序取第一个并记录 `tie_break`；目标动态不唯一时全部分支追踪。
 8. 不臆造：无法确定写 unresolved，记录 detail 与 tried。
@@ -857,13 +860,15 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 | stub 类 | OnRemoteRequest 所属的类 |
 | 初始 impl 类 | 直接与 stub 绑定的类，允许定义在 vendor 或 system |
 | 中间 impl 类 | 初始 impl 在 system 时的透传类；其接口方法不是最终接口 |
-| 最终 impl 类 | 最终接口函数所属的 vendor 类，类定义与函数定义都必须在 vendor |
+| 最终接口函数 | vendor 类成员函数（类定义与函数定义都在 vendor）或 vendor 自由函数（函数定义在 vendor 域） |
+| 最终 impl 类 | 类成员形式的最终接口函数所属的 vendor 类，类定义与函数定义都必须在 vendor；最终自由函数接口不属于任何类 |
+| 最终自由函数接口 | 定义在 vendor 域、不属于任何类的最终接口函数 |
 | 调用点选择 | 当前函数体内对多个调用表达式做多信号打分，选出唯一调用表达式；并列按源码顺序取第一个 |
 | 目标级扇出 | 调用目标动态不唯一时，全部静态可枚举目标各作为独立追踪分支继续 |
 | 追踪分支 | 从某个目标出发的一条独立路径，拥有独立 trace、visited 与终止状态 |
 | tie_break | 调用点打分并列时按源码顺序取第一个的记录 |
 | stub 接口函数 | OnRemoteRequest 分支中直接调用的 stub 类成员函数 |
-| impl 接口函数 | stub 接口经初始/中间 impl 最终调用的、定义在 vendor 域的类成员函数；即最终接口函数 |
+| impl 接口函数 | stub 接口经初始/中间 impl 最终调用的、定义在 vendor 域的最终接口函数（vendor 类成员函数或 vendor 自由函数） |
 | cmdId 用例 | OnRemoteRequest 中一个能够区分 cmdId 取值的分支 |
 | 绑定点 | stub 实例与 impl 实例建立关联的代码位置，通常在 vendor 或 system 域的注册流程中 |
 | 注册流程 | 创建 stub、创建 impl、绑定二者的服务注册/初始化流程 |
@@ -887,10 +892,11 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 | “阶段结果最后一起写” | 03_cases.json 逐用例写穿，避免长任务遗忘。 |
 | “复用上次结果” | 每次备份旧输出后从零分析。 |
 | “函数像 helper，跳过” | 读函数体确认，不能凭名字判断。 |
-| “system impl 就是最终接口” | 不是；system 只是中间层，必须追到 vendor 类成员函数。 |
+| “system impl 就是最终接口” | 不是；system 只是中间层，必须追到 vendor 域最终接口函数（类成员函数或自由函数）。 |
 | “system 层有多个候选，随便选一个” | 多信号打分；并列按源码顺序取第一个，记录 `tie_break`。 |
-| “追踪太深，先停在这里” | 不设深度上限，直到 vendor 类成员或明确终止条件。 |
-| “vendor free function 也算接口” | 不算；继续追到 vendor 类成员函数。 |
+| “追踪太深，先停在这里” | 不设深度上限，直到 vendor 类成员函数、vendor 自由函数或明确终止条件。 |
+| “vendor free function 只是中间 helper” | 不是；vendor 自由函数与 vendor 类成员函数同等作为最终接口，到达即终止。 |
+| “自由函数没有类，跳过不报” | 不允许；按最终接口输出，`impl_class` / `impl_class_file` 记 null。 |
 | “初始 impl 只能在 vendor” | 初始 impl 可在 vendor/system；最终接口必须在 vendor。 |
 | “虚函数按静态类型继续” | 收集 vendor + system 域内全部 override，作为目标级扇出分支。 |
 | “system impl 就记 unresolved” | 不是；system 是合法中间层，继续追踪到 vendor。 |
@@ -966,3 +972,11 @@ conf 中包含：
 ```
 
 追踪继续，不中止、不判并列歧义。
+
+### 示例六：vendor 自由函数接口
+
+`DemoSystemService::VendorOpen` 调用 vendor 自由函数 `demo::hal_open(...)`；该函数定义在 `/abs/vendor/demo_hal.cpp`，不属于任何类。`demo::hal_open` 即最终接口，分支在该函数终止。
+
+1. `02_impl.json` 的 `final_impl_functions` 元素：`function = "demo::hal_open"`，`impl_class = null`，`impl_class_file = null`，`trace` 含 `DemoSystemService::VendorOpen`。
+2. 最终 JSON 对该 cmdId 输出 case：`impl_interface_function = "demo::hal_open"`，`impl_interface_file = "/abs/vendor/demo_hal.cpp"`。
+3. 该入口没有类成员最终接口时，`impl_classes` 为空数组，入口仍正常输出。
