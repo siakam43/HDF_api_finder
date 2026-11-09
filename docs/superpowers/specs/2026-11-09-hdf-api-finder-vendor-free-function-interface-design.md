@@ -1,7 +1,7 @@
 # HDF-api-finder vendor 最终自由函数接口设计（增量）
 
 - 日期：2026-11-09
-- 状态：待实现
+- 状态：已实现，待用户验证
 - 目标文件：`HDF-api-finder/SKILL.md`
 - 基础设计：`docs/superpowers/specs/2026-10-26-hdf-api-finder-design.md`
 - 前置增量：`docs/superpowers/specs/2026-10-26-hdf-api-finder-system-impl-trace-design.md`、`docs/superpowers/specs/2026-11-04-hdf-api-finder-dynamic-target-fanout-design.md`
@@ -141,8 +141,8 @@ vendor 自由函数从中间层列表中删除。
 | 8.2 自检 4/5/12 | 按第 7.1 节放宽 |
 | 第二节完成报告、8.3 | 增加最终自由函数接口数 |
 | 约束规则 4/5 | 最终接口改为定义在 vendor 的类成员函数或自由函数；类成员函数还要求类定义在 vendor |
-| 术语表 | 重定义最终 impl 类、impl 接口函数；新增最终自由函数接口 |
-| 抗理性化表 | 反转旧行；更新"直到 vendor 类成员"一句；新增"自由函数没有类，跳过不报"反面项 |
+| 术语表 | 重定义最终 impl 类、impl 接口函数；新增最终接口函数、最终自由函数接口 |
+| 抗理性化表 | 反转旧行；更新"system impl"、"直到 vendor 类成员"两句；新增"自由函数没有类，跳过不报"反面项 |
 | 使用示例 | 新增示例六（vendor 自由函数接口） |
 
 ## 9. 示例
