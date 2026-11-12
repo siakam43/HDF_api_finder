@@ -84,7 +84,7 @@ description: 当用户调用 /HDF-api-finder <project_dir> <conf>，或要求在
           "cmd_id_value": 0,
           "stub_interface_function": "OHOS::HDI::Demo::V1_0::DemoInterfaceStub::GetVersion",
           "stub_interface_file": "/abs/stub/demo_interface_stub.cpp",
-          "impl_interface_function": "OHOS::HDI::Demo::V1_0::DemoService::GetVersion",
+          "impl_interface_function": "OHOS::HDI::Demo::V1_0::DemoService::GetVersion(std::string& version)",
           "impl_interface_file": "/abs/vendor/demo_service.cpp"
         }
       ]
@@ -93,6 +93,7 @@ description: 当用户调用 /HDF-api-finder <project_dir> <conf>，或要求在
 }
 ```
 
+- `impl_interface_function` 采用 `限定名(参数列表)` 格式，参数列表取自最终接口函数定义处。
 - 不添加示例之外的字段；不生成 summary 报告。
 - 没有可解析用例的入口不进入最终 JSON；全部入口都没有可解析用例时写 `"entries": []`。
 
@@ -379,7 +380,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 1. 在 `initial_impl_class` 及其 vendor/system 基类中解析 `initial_impl_function` 定义。
 2. 方法定义不存在 → `impl_method_not_found`。
 3. 重载无法按实参唯一确定 → `impl_overload_ambiguous`。
-4. 方法定义在 vendor 类成员函数中，且该类的完整定义也在 vendor → 直接作为最终接口：写入 `final_impl_functions` 数组（一个元素，`trace = []`，`target_evidence = []`）。
+4. 方法定义在 vendor 类成员函数中，且该类的完整定义也在 vendor → 直接作为最终接口：写入 `final_impl_functions` 数组（一个元素，`trace = []`，`target_evidence = []`，`signature` 取该定义处参数列表）。
 5. 其他情况 → 进入 6.5 目标级扇出追踪。
 
 ### 6.5 目标级扇出追踪
@@ -405,7 +406,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 6. 对选中调用点的目标集合逐目标建立分支：
    - 目标集合大小 1 → 单分支；大于 1 → 目标级扇出，每个目标创建独立分支，继承当前分支 trace 与 visited 副本；可递归扇出。
    - 目标按 `(定义文件, 定义行)` 升序处理；分支按目标解析的深度优先遍历顺序排序，用于去重与失败原因取首。
-   - 最终接口（任一满足）：vendor 类成员函数且类定义与函数定义都在 vendor；vendor 自由函数且函数定义在 vendor → 记录到 `final_impl_functions`（含该分支 trace 与 `target_evidence`），分支结束。
+   - 最终接口（任一满足）：vendor 类成员函数且类定义与函数定义都在 vendor；vendor 自由函数且函数定义在 vendor → 记录到 `final_impl_functions`（含该分支 trace、`target_evidence` 与该定义处参数列表 `signature`），分支结束。
    - 中间层：system 函数、所属类不在 vendor、vendor 类但函数/类定义不在 vendor → trace 追加该目标与调用证据，继续步骤 1。
 7. visited 每分支独立，键 `(文件, 函数签名行)`，只含当前分支祖先；同一分支重复 → `cycle`。分支间不共享 visited，DAG 收敛不视为环。
 8. 分支终止原因：`definition_not_found`、`target_not_enumerable`、`trace_no_candidate`、`cycle`；失败分支记入 `unresolved_branches`，其他分支继续。`final_impl_not_found` 是映射级汇总原因，不作为分支终止原因。
@@ -458,6 +459,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
           "final_impl_functions": [
             {
               "function": "OHOS::HDI::Demo::V1_0::DemoVendorA::HalOpen",
+              "signature": "(callback_t pCback, void* pDataCback)",
               "file": "/abs/vendor/demo_vendor_a.cpp",
               "line": 80,
               "impl_class": "OHOS::HDI::Demo::V1_0::DemoVendorA",
@@ -512,6 +514,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 字段与规则：
 
 - `final_impl_functions` 每个元素对应一条最终接口（追踪分支或 6.4 直通映射）；元素自带该分支的 `trace`（含初始 impl 方法，不含最终函数）与 `target_evidence`；初始 impl 方法本身是最终接口时 `trace = []`。
+- `signature` 为元素 `function` 对应定义处的参数列表（含括号），与 `function`、`file`、`line` 一同记录；无参数为 `()`。
 - 最终自由函数接口的 `impl_class` 与 `impl_class_file` 为 `null`；其余字段与类成员最终接口一致。
 - `target_evidence` 汇总该分支上每次目标级选择产生的证据；直接单目标且无动态选择时可为空数组。
 - `target_evidence.match` 取值：`direct_assign` / `dlsym_exact` / `dlsym_glob` / `virtual_override` / `base_implementation`。
@@ -560,7 +563,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 对每个 stub 接口函数：
 
 1. 在 `02_impl.json` 的 `stub_function_map` 中查该 stub 函数对应的全部映射记录。
-2. 每条映射记录遍历 `final_impl_functions`，每个元素生成一条 `(stub 接口函数, 最终 impl 函数)` 对。
+2. 每条映射记录遍历 `final_impl_functions`，每个元素生成一条 `(stub 接口函数, 最终 impl 函数)` 对，并复制该元素的 `signature`。
 3. `impl_interfaces` 每个元素的 `evidence_chain` 为 `[stub 接口函数] + 该元素 trace + [该元素最终函数]`。
 4. 映射记录无最终接口 → 把该记录的 `unresolved_reason` 写入用例 unresolved。
 5. 映射记录有部分失败分支 → 成功分支照常生成对应对；失败分支写入用例 `unresolved`；用例 `status = "done"`。
@@ -622,6 +625,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
           "impl_interfaces": [
             {
               "function": "OHOS::HDI::Demo::V1_0::DemoVendorA::HalOpen",
+              "signature": "(callback_t pCback, void* pDataCback)",
               "file": "/abs/vendor/demo_vendor_a.cpp",
               "line": 80,
               "impl_class": "OHOS::HDI::Demo::V1_0::DemoVendorA",
@@ -635,6 +639,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
             },
             {
               "function": "OHOS::HDI::Demo::V1_0::DemoVendorB::HalOpen",
+              "signature": "(callback_t pCback, void* pDataCback)",
               "file": "/abs/vendor/demo_vendor_b.cpp",
               "line": 90,
               "impl_class": "OHOS::HDI::Demo::V1_0::DemoVendorB",
@@ -712,7 +717,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
           "cmd_id_value": 0,
           "stub_interface_function": "OHOS::HDI::Demo::V1_0::DemoInterfaceStub::GetVersion",
           "stub_interface_file": "/abs/stub/demo_interface_stub.cpp",
-          "impl_interface_function": "OHOS::HDI::Demo::V1_0::DemoService::GetVersion",
+          "impl_interface_function": "OHOS::HDI::Demo::V1_0::DemoService::GetVersion(std::string& version)",
           "impl_interface_file": "/abs/vendor/demo_service.cpp"
         }
       ]
@@ -725,7 +730,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 
 1. 只从 `03_cases.json` 中 `status = "done"` 的用例组装；unresolved 不进入最终 JSON。
 2. 一个 case 对应一个 `(stub 函数, 最终 impl 函数)` 对；同一 cmdId 命中多个 impl 函数时输出多条 case；目标级扇出的并列结果按此规则并列输出。
-3. 入口字段：`on_remote_request` / `on_remote_request_file` / `on_remote_request_line` / `stub_class` / `impl_classes` / `cases`；case 字段：`cmd_id_macro` / `cmd_id_value` / `stub_interface_function` / `stub_interface_file` / `impl_interface_function` / `impl_interface_file`。不添加额外字段。
+3. 入口字段：`on_remote_request` / `on_remote_request_file` / `on_remote_request_line` / `stub_class` / `impl_classes` / `cases`；case 字段：`cmd_id_macro` / `cmd_id_value` / `stub_interface_function` / `stub_interface_file` / `impl_interface_function` / `impl_interface_file`；`impl_interface_function` 由 `03_cases.json` 中对应元素的 `function` 与 `signature` 拼接为 `限定名(参数列表)`。不添加额外字段。
 4. 没有可解析用例的入口不进入最终 JSON；全部入口都没有可解析用例时写 `"entries": []`。
 5. `impl_classes` 只收录类成员最终接口所属的最终 vendor 类，按 `(impl_class, impl_file)` 去重，按 `impl_class` → `impl_file` 排序；允许为空（全部最终接口均为自由函数时）。
 6. 同一入口内 case 按六元组去重：`(cmd_id_macro, cmd_id_value, stub_interface_function, stub_interface_file, impl_interface_function, impl_interface_file)`。
@@ -751,12 +756,13 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 13. `final_impl_functions` 已按 `(函数, 文件, 行)` 去重；`target_evidence` 已合并去重。
 14. 每个 `status = "done"` 的用例至少一个 `impl_interfaces` 元素，每个元素 `evidence_chain` 非空。
 15. 部分失败分支只出现在 unresolved 记录中，不得混入最终 JSON。
+16. 每个最终 case 的 `impl_interface_function` 已包含参数列表，且与 `02_impl.json` 对应元素的 `function` 与 `signature` 拼接结果一致。
 
-第 11–15 项为写盘前检查，必须在第 9–10 项写盘之前执行。
+第 11–16 项为写盘前检查，必须在第 9–10 项写盘之前执行。
 
 失败处理：
 
-- 自检第 1–8 项或第 11–15 项失败 → `error.json`（`phase=output`，`code=self_check_failed`），停止，不写最终 JSON。
+- 自检第 1–8 项或第 11–16 项失败 → `error.json`（`phase=output`，`code=self_check_failed`），停止，不写最终 JSON。
 - 写临时文件、回读、mv 或最终文件存在性确认失败 → 删除残留 .tmp，写 `error.json`（`phase=output`，`code=output_write_failed`），停止。
 
 ### 8.3 完成报告
@@ -838,7 +844,7 @@ impl 方法名集合为空时，退化为用 stub 接口函数名做覆盖度匹
 | `final_impl_not_found` | 至少一个入口有初始 impl，但所有入口都没有解析出 vendor 最终接口 | 写 error.json（phase=resolve_impl），结束 |
 | `snapshot_write_failed` | 01/02/03 写入失败 | 写 error.json（对应 phase），结束 |
 | `output_write_failed` | 最终 JSON 写入、回读、mv 或存在性确认失败 | 写 error.json（phase=output），结束 |
-| `self_check_failed` | 自检第 1–8 项或第 11–15 项失败 | 写 error.json（phase=output），结束 |
+| `self_check_failed` | 自检第 1–8 项或第 11–16 项失败 | 写 error.json（phase=output），结束 |
 | `internal_error` | 工具/文件 I/O 或无法继续读取源码 | 写 error.json（当前 phase），结束 |
 
 ### 部分失败
@@ -977,6 +983,6 @@ conf 中包含：
 
 `DemoSystemService::VendorOpen` 调用 vendor 自由函数 `demo::hal_open(...)`；该函数定义在 `/abs/vendor/demo_hal.cpp`，不属于任何类。`demo::hal_open` 即最终接口，分支在该函数终止。
 
-1. `02_impl.json` 的 `final_impl_functions` 元素：`function = "demo::hal_open"`，`impl_class = null`，`impl_class_file = null`，`trace` 含 `DemoSystemService::VendorOpen`。
-2. 最终 JSON 对该 cmdId 输出 case：`impl_interface_function = "demo::hal_open"`，`impl_interface_file = "/abs/vendor/demo_hal.cpp"`。
+1. `02_impl.json` 的 `final_impl_functions` 元素：`function = "demo::hal_open"`，`signature = "(callback_t cb, void* data)"`，`impl_class = null`，`impl_class_file = null`，`trace` 含 `DemoSystemService::VendorOpen`。
+2. 最终 JSON 对该 cmdId 输出 case：`impl_interface_function = "demo::hal_open(callback_t cb, void* data)"`，`impl_interface_file = "/abs/vendor/demo_hal.cpp"`。
 3. 该入口没有类成员最终接口时，`impl_classes` 为空数组，入口仍正常输出。
