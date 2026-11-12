@@ -1,7 +1,7 @@
 # HDF-api-finder impl 接口函数参数补充设计（增量）
 
 - 日期：2026-11-12
-- 状态：待实现
+- 状态：已实现，待用户验证
 - 目标文件：`HDF-api-finder/SKILL.md`
 - 基础设计：`docs/superpowers/specs/2026-10-26-hdf-api-finder-design.md`
 - 前置增量：`docs/superpowers/specs/2026-10-26-hdf-api-finder-system-impl-trace-design.md`、`docs/superpowers/specs/2026-11-04-hdf-api-finder-dynamic-target-fanout-design.md`、`docs/superpowers/specs/2026-11-09-hdf-api-finder-vendor-free-function-interface-design.md`

@@ -1,6 +1,6 @@
 # HDF-api-finder impl 接口函数参数补充实现计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 修改 `HDF-api-finder/SKILL.md`，让最终 JSON 的 `impl_interface_function` 输出 `限定名(参数列表)`，参数列表取自最终接口函数在 vendor 域的定义处。
 
@@ -46,7 +46,7 @@ docs/superpowers/specs/2026-11-12-hdf-api-finder-impl-interface-signature-design
 **Files:**
 - Add: `docs/superpowers/plans/2026-11-12-hdf-api-finder-impl-interface-signature.md`
 
-- [ ] **Step 1: 确认工作区状态**
+- [x] **Step 1: 确认工作区状态**
 
 Run:
 
@@ -57,7 +57,7 @@ git branch --show-current
 
 Expected: 只有本计划为未跟踪文件；当前分支为 `dev`。
 
-- [ ] **Step 2: 提交计划**
+- [x] **Step 2: 提交计划**
 
 Run:
 
@@ -73,7 +73,7 @@ EOF
 
 Expected: 提交成功，包含 1 个文件。
 
-- [ ] **Step 3: 验证提交**
+- [x] **Step 3: 验证提交**
 
 Run:
 
@@ -91,7 +91,7 @@ Expected: 作者为 `siakam43 <429872468@qq.com>`；工作区无未提交改动�
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第二节「输出」）
 
-- [ ] **Step 1: 确认旧文本存在**
+- [x] **Step 1: 确认旧文本存在**
 
 Run:
 
@@ -101,7 +101,7 @@ grep -n '"impl_interface_function": "OHOS::HDI::Demo::V1_0::DemoService::GetVers
 
 Expected: 2 处（第二节输出示例与 8.1 示例共用一个同文行）。
 
-- [ ] **Step 2: 更新两处示例中的 impl_interface_function**
+- [x] **Step 2: 更新两处示例中的 impl_interface_function**
 
 使用 Edit，`replace_all: true`。
 
@@ -117,7 +117,7 @@ Expected: 2 处（第二节输出示例与 8.1 示例共用一个同文行）。
           "impl_interface_function": "OHOS::HDI::Demo::V1_0::DemoService::GetVersion(std::string& version)",
 ```
 
-- [ ] **Step 3: 第二节输出规则补充一条**
+- [x] **Step 3: 第二节输出规则补充一条**
 
 将：
 
@@ -132,7 +132,7 @@ Expected: 2 处（第二节输出示例与 8.1 示例共用一个同文行）。
 - 不添加示例之外的字段；不生成 summary 报告。
 ```
 
-- [ ] **Step 4: 验证替换结果**
+- [x] **Step 4: 验证替换结果**
 
 Run:
 
@@ -151,7 +151,7 @@ Expected: 计数为 `2`；`old_field=absent`；`format_rule=present`。
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（6.4 步骤 4、6.5 步骤 6、6.6 示例与字段规则）
 
-- [ ] **Step 1: 确认旧文本存在**
+- [x] **Step 1: 确认旧文本存在**
 
 Run:
 
@@ -163,7 +163,7 @@ grep -n '"function": "OHOS::HDI::Demo::V1_0::DemoVendorA::HalOpen",' HDF-api-fin
 
 Expected: 前两条各 1 处；`DemoVendorA::HalOpen` 行存在（6.6 示例，1 处）。
 
-- [ ] **Step 2: 更新 6.4 步骤 4**
+- [x] **Step 2: 更新 6.4 步骤 4**
 
 将：
 
@@ -177,7 +177,7 @@ Expected: 前两条各 1 处；`DemoVendorA::HalOpen` 行存在（6.6 示例，1
 4. 方法定义在 vendor 类成员函数中，且该类的完整定义也在 vendor → 直接作为最终接口：写入 `final_impl_functions` 数组（一个元素，`trace = []`，`target_evidence = []`，`signature` 取该定义处参数列表）。
 ```
 
-- [ ] **Step 3: 更新 6.5 步骤 6 的最终接口分支**
+- [x] **Step 3: 更新 6.5 步骤 6 的最终接口分支**
 
 将：
 
@@ -191,7 +191,7 @@ Expected: 前两条各 1 处；`DemoVendorA::HalOpen` 行存在（6.6 示例，1
    - 最终接口（任一满足）：vendor 类成员函数且类定义与函数定义都在 vendor；vendor 自由函数且函数定义在 vendor → 记录到 `final_impl_functions`（含该分支 trace、`target_evidence` 与该定义处参数列表 `signature`），分支结束。
 ```
 
-- [ ] **Step 4: 6.6 示例增加 signature 字段**
+- [x] **Step 4: 6.6 示例增加 signature 字段**
 
 将：
 
@@ -199,6 +199,10 @@ Expected: 前两条各 1 处；`DemoVendorA::HalOpen` 行存在（6.6 示例，1
             {
               "function": "OHOS::HDI::Demo::V1_0::DemoVendorA::HalOpen",
               "file": "/abs/vendor/demo_vendor_a.cpp",
+              "line": 80,
+              "impl_class": "OHOS::HDI::Demo::V1_0::DemoVendorA",
+              "impl_class_file": "/abs/vendor/demo_vendor_a.h",
+              "trace": [
 ```
 
 替换为：
@@ -208,9 +212,15 @@ Expected: 前两条各 1 处；`DemoVendorA::HalOpen` 行存在（6.6 示例，1
               "function": "OHOS::HDI::Demo::V1_0::DemoVendorA::HalOpen",
               "signature": "(callback_t pCback, void* pDataCback)",
               "file": "/abs/vendor/demo_vendor_a.cpp",
+              "line": 80,
+              "impl_class": "OHOS::HDI::Demo::V1_0::DemoVendorA",
+              "impl_class_file": "/abs/vendor/demo_vendor_a.h",
+              "trace": [
 ```
 
-- [ ] **Step 5: 6.6 字段规则补充 signature 说明**
+说明：6.6 与 7.5 的 VendorA 元素前几行相同，必须带上 `"trace": [` 才能唯一定位 6.6。
+
+- [x] **Step 5: 6.6 字段规则补充 signature 说明**
 
 将：
 
@@ -225,7 +235,7 @@ Expected: 前两条各 1 处；`DemoVendorA::HalOpen` 行存在（6.6 示例，1
 - `signature` 为元素 `function` 对应定义处的参数列表（含括号），与 `function`、`file`、`line` 一同记录；无参数为 `()`。
 ```
 
-- [ ] **Step 6: 验证替换结果**
+- [x] **Step 6: 验证替换结果**
 
 Run:
 
@@ -245,7 +255,7 @@ Expected: 四项均为 `present`。
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（7.2 用例映射、7.5 示例）
 
-- [ ] **Step 1: 确认旧文本存在**
+- [x] **Step 1: 确认旧文本存在**
 
 Run:
 
@@ -256,7 +266,7 @@ grep -c '"function": "OHOS::HDI::Demo::V1_0::DemoVendor[AB]::HalOpen",' HDF-api-
 
 Expected: 7.2 有 1 处；`HalOpen` 的 function 行共 3 处（6.6 示例 1 处 + 7.5 示例 VendorA/VendorB 各 1 处）。
 
-- [ ] **Step 2: 更新 7.2 步骤 2**
+- [x] **Step 2: 更新 7.2 步骤 2**
 
 将：
 
@@ -270,7 +280,7 @@ Expected: 7.2 有 1 处；`HalOpen` 的 function 行共 3 处（6.6 示例 1 处
 2. 每条映射记录遍历 `final_impl_functions`，每个元素生成一条 `(stub 接口函数, 最终 impl 函数)` 对，并复制该元素的 `signature`。
 ```
 
-- [ ] **Step 3: 7.5 示例 VendorA 元素增加 signature**
+- [x] **Step 3: 7.5 示例 VendorA 元素增加 signature**
 
 将：
 
@@ -287,7 +297,7 @@ Expected: 7.2 有 1 处；`HalOpen` 的 function 行共 3 处（6.6 示例 1 处
               "file": "/abs/vendor/demo_vendor_a.cpp",
 ```
 
-- [ ] **Step 4: 7.5 示例 VendorB 元素增加 signature**
+- [x] **Step 4: 7.5 示例 VendorB 元素增加 signature**
 
 将：
 
@@ -304,7 +314,7 @@ Expected: 7.2 有 1 处；`HalOpen` 的 function 行共 3 处（6.6 示例 1 处
               "file": "/abs/vendor/demo_vendor_b.cpp",
 ```
 
-- [ ] **Step 5: 验证替换结果**
+- [x] **Step 5: 验证替换结果**
 
 Run:
 
@@ -322,7 +332,7 @@ Expected: `7.2=present`；计数为 `3`（6.6 示例 1 处 + 7.5 示例 2 处）
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（8.1 规则 3、8.2 自检与失败处理）
 
-- [ ] **Step 1: 确认旧文本存在**
+- [x] **Step 1: 确认旧文本存在**
 
 Run:
 
@@ -334,7 +344,7 @@ grep -n '自检第 1–8 项或第 11–15 项失败' HDF-api-finder/SKILL.md
 
 Expected: 各 1 处。
 
-- [ ] **Step 2: 更新 8.1 规则 3**
+- [x] **Step 2: 更新 8.1 规则 3**
 
 将：
 
@@ -348,7 +358,7 @@ Expected: 各 1 处。
 3. 入口字段：`on_remote_request` / `on_remote_request_file` / `on_remote_request_line` / `stub_class` / `impl_classes` / `cases`；case 字段：`cmd_id_macro` / `cmd_id_value` / `stub_interface_function` / `stub_interface_file` / `impl_interface_function` / `impl_interface_file`；`impl_interface_function` 由 `03_cases.json` 中对应元素的 `function` 与 `signature` 拼接为 `限定名(参数列表)`。不添加额外字段。
 ```
 
-- [ ] **Step 3: 8.2 增加自检项并更新顺序说明**
+- [x] **Step 3: 8.2 增加自检项并更新顺序说明**
 
 将：
 
@@ -367,7 +377,7 @@ Expected: 各 1 处。
 第 11–16 项为写盘前检查，必须在第 9–10 项写盘之前执行。
 ```
 
-- [ ] **Step 4: 更新自检失败处理引用**
+- [x] **Step 4: 更新自检失败处理引用**
 
 将：
 
@@ -381,7 +391,21 @@ Expected: 各 1 处。
 - 自检第 1–8 项或第 11–16 项失败 → `error.json`（`phase=output`，`code=self_check_failed`），停止，不写最终 JSON。
 ```
 
-- [ ] **Step 5: 验证替换结果**
+同时更新「全局错误码」表中同一引用：
+
+将：
+
+```text
+| `self_check_failed` | 自检第 1–8 项或第 11–15 项失败 | 写 error.json（phase=output），结束 |
+```
+
+替换为：
+
+```text
+| `self_check_failed` | 自检第 1–8 项或第 11–16 项失败 | 写 error.json（phase=output），结束 |
+```
+
+- [x] **Step 5: 验证替换结果**
 
 Run:
 
@@ -402,7 +426,7 @@ Expected: 四项均为 `present`；`old_refs=absent`。
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`（第十二章 示例六）
 
-- [ ] **Step 1: 确认旧文本存在**
+- [x] **Step 1: 确认旧文本存在**
 
 Run:
 
@@ -413,7 +437,7 @@ grep -n '`impl_interface_function = "demo::hal_open"`' HDF-api-finder/SKILL.md
 
 Expected: 各 1 处。
 
-- [ ] **Step 2: 更新 02_impl 元素说明**
+- [x] **Step 2: 更新 02_impl 元素说明**
 
 将：
 
@@ -427,7 +451,7 @@ Expected: 各 1 处。
 1. `02_impl.json` 的 `final_impl_functions` 元素：`function = "demo::hal_open"`，`signature = "(callback_t cb, void* data)"`，`impl_class = null`，`impl_class_file = null`，`trace` 含 `DemoSystemService::VendorOpen`。
 ```
 
-- [ ] **Step 3: 更新最终 JSON case 说明**
+- [x] **Step 3: 更新最终 JSON case 说明**
 
 将：
 
@@ -441,7 +465,7 @@ Expected: 各 1 处。
 2. 最终 JSON 对该 cmdId 输出 case：`impl_interface_function = "demo::hal_open(callback_t cb, void* data)"`，`impl_interface_file = "/abs/vendor/demo_hal.cpp"`。
 ```
 
-- [ ] **Step 4: 验证替换结果**
+- [x] **Step 4: 验证替换结果**
 
 Run:
 
@@ -460,7 +484,7 @@ Expected: 前两项 `present`；`old_example6=absent`。
 **Files:**
 - Check: `HDF-api-finder/SKILL.md`
 
-- [ ] **Step 1: 检查 JSON 示例字段与 JSON 有效性**
+- [x] **Step 1: 检查 JSON 示例字段与 JSON 有效性**
 
 Run:
 
@@ -479,7 +503,7 @@ PY
 
 Expected: `impl_interface_function` 的 JSON 行均带 `(`；`json_blocks_ok` 输出且无异常。
 
-- [ ] **Step 2: 检查新字段与旧口径**
+- [x] **Step 2: 检查新字段与旧口径**
 
 Run:
 
@@ -491,7 +515,7 @@ grep -n '只记录限定函数名\|impl_interface_function.*只有函数名' HDF
 
 Expected: 计数为 `3`；`pure_name_values=absent`；`old_wording=absent`。
 
-- [ ] **Step 3: 检查未越界修改**
+- [x] **Step 3: 检查未越界修改**
 
 Run:
 
@@ -503,7 +527,7 @@ git diff -- HDF-api-finder/SKILL.md | head -200
 
 Expected: 仅 `HDF-api-finder/SKILL.md` 被修改；`no_out_of_scope_additions`；diff 仅涉及第二节、6.4、6.5、6.6、7.2、7.5、8.1、8.2、示例六。
 
-- [ ] **Step 4: 记录审计结论**
+- [x] **Step 4: 记录审计结论**
 
 在对话中报告：JSON 示例块数量、`signature` 字段数量、旧口径检查结果、diff 涉及小节。明确声明：仅验证文本与 JSON 结构一致性，未在真实 HDF 项目验证参数提取准确性。
 
@@ -514,7 +538,7 @@ Expected: 仅 `HDF-api-finder/SKILL.md` 被修改；`no_out_of_scope_additions`�
 **Files:**
 - Modify: `HDF-api-finder/SKILL.md`
 
-- [ ] **Step 1: 检查待提交内容**
+- [x] **Step 1: 检查待提交内容**
 
 Run:
 
@@ -525,7 +549,7 @@ git diff --stat
 
 Expected: 只有 `HDF-api-finder/SKILL.md` 被修改。
 
-- [ ] **Step 2: 提交**
+- [x] **Step 2: 提交**
 
 Run:
 
@@ -541,7 +565,7 @@ EOF
 
 Expected: 提交成功，包含 1 个文件。
 
-- [ ] **Step 3: 验证提交**
+- [x] **Step 3: 验证提交**
 
 Run:
 
@@ -561,7 +585,7 @@ Expected: 作者为 `siakam43 <429872468@qq.com>`；工作区干净；当前分�
 - Modify: `docs/superpowers/specs/2026-11-12-hdf-api-finder-impl-interface-signature-design.md`
 - Modify: `docs/superpowers/plans/2026-11-12-hdf-api-finder-impl-interface-signature.md`
 
-- [ ] **Step 1: 更新增量设计状态**
+- [x] **Step 1: 更新增量设计状态**
 
 将：
 
@@ -575,15 +599,15 @@ Expected: 作者为 `siakam43 <429872468@qq.com>`；工作区干净；当前分�
 - 状态：已实现，待用户验证
 ```
 
-- [ ] **Step 2: 勾选本计划全部复选框**
+- [x] **Step 2: 勾选本计划全部复选框**
 
 对本计划文件执行 replace_all：
 
 ```text
-- [ ] → - [x]
+- [x] → - [x]
 ```
 
-- [ ] **Step 3: 提交完成标记**
+- [x] **Step 3: 提交完成标记**
 
 Run:
 
@@ -601,7 +625,7 @@ git status --short
 
 Expected: 提交成功，包含 2 个文件；工作区干净；作者为 `siakam43 <429872468@qq.com>`。
 
-- [ ] **Step 4: 最终分支状态**
+- [x] **Step 4: 最终分支状态**
 
 Run:
 
